@@ -148,13 +148,24 @@ module user_data_path
      output [SRAM_ADDR_WIDTH-1:0]       wr_0_addr,
      output                             wr_0_req,
      input                              wr_0_ack,
-     output [DATA_WIDTH-1:0]            wr_0_data,
+     output [SRAM_DATA_WIDTH-1:0]       wr_0_data,
 
      input                              rd_0_ack,
-     input  [DATA_WIDTH-1:0]            rd_0_data,
+     input  [SRAM_DATA_WIDTH-1:0]       rd_0_data,
      input                              rd_0_vld,
      output [SRAM_ADDR_WIDTH-1:0]       rd_0_addr,
      output                             rd_0_req,
+
+     output [SRAM_ADDR_WIDTH-1:0]       wr_shi_addr,
+     output                             wr_shi_req,
+     input                              wr_shi_ack,
+     output [SRAM_DATA_WIDTH-1:0]       wr_shi_data,
+
+     input                              rd_shi_ack,
+     input  [SRAM_DATA_WIDTH-1:0]       rd_shi_data,
+     input                              rd_shi_vld,
+     output [SRAM_ADDR_WIDTH-1:0]       rd_shi_addr,
+     output                             rd_shi_req,
 
      // interface to DRAM
      // interface to DRAM
@@ -268,7 +279,12 @@ module user_data_path
    wire [`CPCI_NF2_DATA_WIDTH-1:0]  evt_cap_in_reg_data;
    wire [UDP_REG_SRC_WIDTH-1:0]     evt_cap_in_reg_src;
 
-
+   /* Bloom filter */
+   wire                             wire_is_ack;
+   wire                             wire_bloom_rdy;
+   wire                             wire_bloom_wr;
+   wire [SRAM_ADDR_WIDTH-1:0]       wire_index_0;
+   wire [SRAM_ADDR_WIDTH-1:0]       wire_index_1;
 
    //--------- Connect the data path -----------
 
@@ -279,16 +295,10 @@ module user_data_path
        .STAGE_NUMBER(IN_ARB_STAGE_NUM))
    input_arbiter
      (
-    /*.out_data             (op_lut_in_data),
-    .out_ctrl             (op_lut_in_ctrl),
-    .out_wr               (op_lut_in_wr),
-    .out_rdy              (op_lut_in_rdy),*/
-
       .out_data              (temp_in_data),
       .out_ctrl              (temp_in_ctrl),
       .out_wr                (temp_in_wr),
       .out_rdy               (temp_in_rdy),
-
 
       // --- Interface to the input queues
     .in_data_0            (in_data_0),
@@ -367,6 +377,12 @@ module user_data_path
       .in_wr                (temp_in_wr),
       .in_rdy               (temp_in_rdy),
 
+      .bloom_rdy              (wire_bloom_rdy),
+      .bloom_wr               (wire_bloom_wr),
+      .index_0                (wire_index_0),
+      .index_1                (wire_index_1),
+      .pkt_is_ack             (wire_is_ack),
+
       .reg_req_in           (temp_in_reg_req),
       .reg_ack_in           (temp_in_reg_ack),
       .reg_rd_wr_L_in       (temp_in_reg_rd_wr_L),
@@ -383,6 +399,45 @@ module user_data_path
 
       .clk              (clk),
       .reset            (reset));
+
+    bloom_filter #(
+        .DATA_WIDTH(SRAM_DATA_WIDTH),
+        .CTRL_WIDTH(CTRL_WIDTH),
+        .UDP_REG_SRC_WIDTH (UDP_REG_SRC_WIDTH),
+        .SRAM_ADDR_WIDTH(SRAM_ADDR_WIDTH)
+    ) bloom_filter (
+
+      .is_ack                    (wire_is_ack),
+      .index_0                   (wire_index_0),
+      .index_1                   (wire_index_1),
+      .in_rdy                    (wire_bloom_rdy),
+      .in_wr                     (wire_bloom_wr),
+
+      /* interface to SRAM */
+      .wr_req                   (wr_0_req),
+      .wr_addr                  (wr_0_addr),
+      .wr_data                  (wr_0_data),
+      .wr_ack                   (wr_0_ack),
+   
+      .rd_req                   (rd_0_req),
+      .rd_addr                  (rd_0_addr), 
+      .rd_data                  (rd_0_data),
+      .rd_ack                   (rd_0_ack),
+      .rd_vld                   (rd_0_vld),
+
+      .wr_shi_req                   (wr_shi_req),
+      .wr_shi_addr                  (wr_shi_addr),
+      .wr_shi_data                  (wr_shi_data),
+      .wr_shi_ack                   (wr_shi_ack),
+   
+      .rd_shi_req                   (rd_shi_req),
+      .rd_shi_addr                  (rd_shi_addr), 
+      .rd_shi_data                  (rd_shi_data),
+      .rd_shi_ack                   (rd_shi_ack),
+      .rd_shi_vld                   (rd_shi_vld),
+
+      .clk                      (clk),
+      .reset                    (reset));
 
    output_port_lookup
      #(.DATA_WIDTH(DATA_WIDTH),

@@ -224,12 +224,12 @@ module nf2_core #(
 
    wire                               wr_0_req;
    wire [19-1:0]        wr_0_addr;
-   wire [DATA_WIDTH-1:0]              wr_0_data;
+   wire [DATA_WIDTH+CTRL_WIDTH-1:0]   wr_0_data;
    wire                               wr_0_ack;
 
    wire                               rd_0_req;
    wire [19-1:0]        rd_0_addr;
-   wire [DATA_WIDTH-1:0]              rd_0_data;
+   wire [DATA_WIDTH+CTRL_WIDTH-1:0]   rd_0_data;
    wire                               rd_0_vld;
    wire                               rd_0_ack;
 
@@ -490,6 +490,17 @@ module nf2_core #(
    wire [CTRL_WIDTH-1:0]            sram_bw;
    wire                             sram_we;
 
+   wire [19-1:0]       rd_shi_addr;
+   wire [DATA_WIDTH+CTRL_WIDTH-1:0]  rd_shi_data;
+   wire                             rd_shi_req;
+   wire                             rd_shi_ack;
+   wire                             rd_shi_vld;
+
+   wire [19-1:0]       wr_shi_addr;
+   wire [DATA_WIDTH+CTRL_WIDTH-1:0]  wr_shi_data;
+   wire                             wr_shi_req;
+   wire                             wr_shi_ack;
+
    generate
    if(DATA_WIDTH==64) begin: sram64
       (* keep_hierarchy = "false" *) sram_arbiter
@@ -506,6 +517,17 @@ module nf2_core #(
          .rd_0_data          (rd_0_data),
          .rd_0_ack           (rd_0_ack),
          .rd_0_vld           (rd_0_vld),
+
+         .wr_1_req           (wr_shi_req),
+         .wr_1_addr          (wr_shi_addr),
+         .wr_1_data          (wr_shi_data),
+         .wr_1_ack           (wr_shi_ack),
+
+         .rd_1_req           (rd_shi_req),
+         .rd_1_addr          (rd_shi_addr),
+         .rd_1_data          (rd_shi_data),
+         .rd_1_ack           (rd_shi_ack),
+         .rd_1_vld           (rd_shi_vld),
 
          // --- sram access
          .sram_addr          (sram_addr),
@@ -772,15 +794,25 @@ module nf2_core #(
          *****/
 
         // interface to SRAM
-        .wr_0_addr (wr_0_addr),
-        .wr_0_req (wr_0_req),
-        .wr_0_ack (wr_0_ack),
-        .wr_0_data (wr_0_data),
-        .rd_0_ack (rd_0_ack),
-        .rd_0_data (rd_0_data),
-        .rd_0_vld (rd_0_vld),
-        .rd_0_addr (rd_0_addr),
-        .rd_0_req (rd_0_req),
+        .wr_0_addr               (wr_0_addr),
+        .wr_0_req                (wr_0_req),
+        .wr_0_ack                (wr_0_ack),
+        .wr_0_data               (wr_0_data),
+        .rd_0_ack                (rd_0_ack),
+        .rd_0_data               (rd_0_data),
+        .rd_0_vld                (rd_0_vld),
+        .rd_0_addr               (rd_0_addr),
+        .rd_0_req                (rd_0_req),
+
+        .wr_shi_addr             (wr_shi_addr),
+        .wr_shi_req              (wr_shi_req),
+        .wr_shi_ack              (wr_shi_ack),
+        .wr_shi_data             (wr_shi_data),
+        .rd_shi_ack              (rd_shi_ack),
+        .rd_shi_data             (rd_shi_data),
+        .rd_shi_vld              (rd_shi_vld),
+        .rd_shi_addr             (rd_shi_addr),
+        .rd_shi_req              (rd_shi_req),
 
         // interface to DRAM
         /* TBD */

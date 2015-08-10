@@ -14,7 +14,7 @@ module temp
       parameter DATA_WIDTH = 64,
       parameter CTRL_WIDTH = DATA_WIDTH/8,
       parameter SRAM_ADDR_WIDTH = 19,
-      parameter HASH_BITS = 19,
+      parameter HASH_BITS = SRAM_ADDR_WIDTH,
       parameter UDP_REG_SRC_WIDTH = 2
    )
    (
@@ -27,6 +27,13 @@ module temp
       output [CTRL_WIDTH-1:0]             out_ctrl,
       output reg                          out_wr,
       input                               out_rdy,
+
+      /* --- interface to bloom filter --- */
+      input                               bloom_rdy,
+      output reg                          bloom_wr,   
+      output [HASH_BITS-1:0]              index_0,
+      output [HASH_BITS-1:0]              index_1,
+      output reg                          pkt_is_ack,         
 
       // --- Register interface
       input                               reg_req_in,
@@ -60,9 +67,8 @@ module temp
    localparam WORD5_TCP_PORT =16;
    localparam WORD6_TCP_ACK = 32;
    localparam PAYLOAD =64;
-   localparam DATA_TUPLE =128;
-   localparam ACK_TUPLE = 256;
-   localparam NUM_STATES = 9; //ONE_HOT ENCODING
+   localparam BLOOM_CTRL =128;
+   localparam NUM_STATES = 8; //ONE_HOT ENCODING
 
    localparam TCP = 'h06;
    
@@ -85,16 +91,15 @@ module temp
    reg [31:0]                                num_TCP, num_TCP_next;
    
    /* hash tuple: wires and regs */
-   reg[TUPLE_SZ-1:0]			                  tuple_next, tuple;
+   reg  [TUPLE_SZ-1:0]			               tuple;
    
    reg[IP_SZ-1:0]       			            srcip_next, srcip;
    reg[IP_SZ-1:0]			                     dstip_next, dstip;
    reg[TCP_PORT_SZ-1:0]			               srcport_next, srcport;
    reg[TCP_PORT_SZ-1:0]	   		            dstport_next, dstport;
    
-   reg                                       pkt_is_ack, pkt_is_ack_next;
+   reg                                       pkt_is_ack_next;
    
-   wire [HASH_BITS-1:0]                      index_0, index_1;                      
 
 
    //------------------------- Local assignments -------------------------------
@@ -110,6 +115,20 @@ module temp
 
    assign out_ctrl = in_fifo_ctrl;
    assign out_data = in_fifo_data;
+
+   always @(*) begin
+      if (pkt_is_ack) begin
+         tuple[15:0] =dstport;
+         tuple[31:16] =srcport;
+         tuple[63:32] =dstip;
+         tuple[95:64] =srcip;
+      end else begin
+         tuple[15:0] =srcport;
+         tuple[31:16] =dstport;
+         tuple[63:32] =srcip;
+         tuple[95:64] =dstip;
+      end
+   end
 
    //------------------------- Modules-------------------------------
 
@@ -144,10 +163,12 @@ module temp
       // Default values
       in_fifo_rd_en = 0;
       out_wr = 0;
-      
+
+      /* Bloom interface */
+      bloom_wr = 0;
+
       state_next = state;
       num_TCP_next = num_TCP;
-      tuple_next = tuple;
       pkt_is_ack_next = pkt_is_ack;
       
       srcip_next = srcip;
@@ -167,8 +188,6 @@ module temp
                state_next = WAIT_PACKET;
             end
          end
-         else
-            state_next = WAIT_PACKET;
       end
       WORD2_CHECK_IPV4: begin
          if (!in_fifo_empty && out_rdy) begin
@@ -182,8 +201,6 @@ module temp
                state_next = WORD3_CHECK_TCP;
             end
          end
-         else
-            state_next = WORD2_CHECK_IPV4;
       end
       WORD3_CHECK_TCP: begin
          if (!in_fifo_empty && out_rdy) begin
@@ -197,8 +214,6 @@ module temp
                state_next = PAYLOAD;
             end
          end
-         else
-            state_next = WORD3_CHECK_TCP;
       end
       WORD4_ADDR_CHKSUM: begin
          if (!in_fifo_empty && out_rdy) begin
@@ -209,8 +224,6 @@ module temp
             srcip_next = in_fifo_data[47:16]; //srcIP
             dstip_next[31:16] = {in_fifo_data[15:0]}; //dstIP1
          end
-         else
-            state_next = WORD4_ADDR_CHKSUM;
       end
       WORD5_TCP_PORT: begin
          if (!in_fifo_empty && out_rdy) begin
@@ -220,40 +233,25 @@ module temp
             /* tupla */
             dstip_next[15:0] = in_fifo_data[63:48]; //dstIP2
             srcport_next = in_fifo_data[47:32]; //srcPort
-            dstport_next = in_fifo_data[31:16]; //dstPort            
-         end else
-            state_next = WORD5_TCP_PORT;
+            dstport_next = in_fifo_data[31:16]; //dstPort
+         end
       end
       WORD6_TCP_ACK: begin
          if (!in_fifo_empty && out_rdy) begin
             in_fifo_rd_en = 1;
             out_wr = 1;
             
-            if(in_fifo_data[4]) begin //ACK flag
+            if(in_fifo_data[4])
                pkt_is_ack_next = 'b1;
-               state_next = ACK_TUPLE;
-            end else 
-               state_next = DATA_TUPLE;         
-         end else 
-            state_next = WORD6_TCP_ACK;
+
+            state_next = BLOOM_CTRL;         
+         end
       end
-      ACK_TUPLE:  begin
-         /* inv{IDFlow}: src<>dst */
-         tuple_next[15:0] =dstport;
-         tuple_next[31:16] =srcport;
-         tuple_next[63:32] =dstip;
-         tuple_next[95:64] =srcip;
-            
-         state_next = PAYLOAD;
-      end
-      DATA_TUPLE:  begin
-         /* {IDFlow}: dst<>src */
-         tuple_next[15:0] =srcport;
-         tuple_next[31:16] =dstport;
-         tuple_next[63:32] =srcip;
-         tuple_next[95:64] =dstip;
-         
-         state_next = PAYLOAD;
+      BLOOM_CTRL: begin
+         if (bloom_rdy) begin
+            bloom_wr = 1;
+            state_next = PAYLOAD;
+         end
       end
       PAYLOAD: begin
          if (!in_fifo_empty && out_rdy) begin
@@ -263,8 +261,7 @@ module temp
                state_next = PAYLOAD;
             end else if (in_fifo_ctrl == `IO_QUEUE_STAGE_NUM)
                state_next = WAIT_PACKET; 
-         end else
-            state_next = PAYLOAD;
+         end
       end
       endcase
    end
@@ -274,13 +271,12 @@ module temp
          state <= WAIT_PACKET;
          num_TCP <= 0;
          pkt_is_ack <= 0;
-         tuple <= 'h0;
+         
       end else begin
          state <= state_next;
          num_TCP <= num_TCP_next;
          
          /* tupla */ 
-         tuple <= tuple_next;
          pkt_is_ack <= pkt_is_ack_next;    
          srcip <= srcip_next;
          dstip <= dstip_next;
@@ -300,10 +296,31 @@ module temp
       if(in_fifo_data[7:0] == TCP)
          $display("WORD3_CHECK_TCP: TCP\n");
       
+      if(state_next == BLOOM_CTRL)
+         $display("BLOOM_CTRL\n");
+
+      /*if(state_next == WAIT_PACKET)
+         $display("WAIT_PACKET\n");*/
+
+      if(state_next == WORD5_TCP_PORT)
+         $display("WORD5_TCP_PORT\n");
+
+      if(state_next == WORD4_ADDR_CHKSUM)
+         $display("WORD4_ADDR_CHKSUM\n");
+
+      if(state_next == WORD6_TCP_ACK)
+         $display("WORD6_TCP_ACK\n");
+      /*if(state_next == PAYLOAD)
+         $display("PAYLOAD\n");*/
+
       if(state == PAYLOAD && state_next == WAIT_PACKET) begin
          $display("tupla: %x\n",tuple);
-         $display("hash0: %x\nhash1: %x\n",index_0,index_1);   
+         $display("hash0: %x\nhash1: %x\n",index_0,index_1); 
       end
+      //synthesis translate_off
+      if(!bloom_rdy)
+         $stop;
+      //synthesis translate_on
    end
    //synthesis translate_on
 endmodule
