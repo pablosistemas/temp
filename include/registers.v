@@ -220,6 +220,8 @@
 `define IN_ARB_REG_ADDR_WIDTH       6
 `define MAC_GRP_BLOCK_ADDR_WIDTH    4
 `define MAC_GRP_REG_ADDR_WIDTH      16
+`define MAKER_BLOCK_ADDR_WIDTH      16
+`define MAKER_REG_ADDR_WIDTH        7
 `define MDIO_BLOCK_ADDR_WIDTH       4
 `define MDIO_REG_ADDR_WIDTH         16
 `define SRAM_BLOCK_ADDR_WIDTH       1
@@ -242,8 +244,9 @@
 `define CPU_QUEUE_3_BLOCK_ADDR  4'hf
 `define SRAM_BLOCK_ADDR         1'h1
 `define UDP_BLOCK_ADDR          1'h1
-`define IN_ARB_BLOCK_ADDR       17'h00000
-`define BRAM_OQ_BLOCK_ADDR      17'h00001
+`define MAKER_BLOCK_ADDR        16'h0000
+`define IN_ARB_BLOCK_ADDR       17'h00002
+`define BRAM_OQ_BLOCK_ADDR      17'h00003
 `define DRAM_BLOCK_ADDR         1'h1
 
 
@@ -302,6 +305,22 @@
 `define CPU_QUEUE_TX_QUEUE_NUM_OVERRUNS          16'hd
 `define CPU_QUEUE_TX_QUEUE_NUM_WORDS_PUSHED      16'he
 `define CPU_QUEUE_TX_QUEUE_NUM_BYTES_PUSHED      16'hf
+
+// Name: cria_pkts
+// Description: Packet Header Registers
+// File: projects/temp/include/cria_pkts.xml
+`define MAKER_DST_MAC_HI         7'h0
+`define MAKER_DST_MAC_LO         7'h1
+`define MAKER_SRC_MAC_HI         7'h2
+`define MAKER_SRC_MAC_LO         7'h3
+`define MAKER_ETHERTYPE          7'h4
+`define MAKER_IP_DST             7'h5
+`define MAKER_IP_SRC             7'h6
+`define MAKER_UDP_SRC_PORT       7'h7
+`define MAKER_UDP_DST_PORT       7'h8
+`define MAKER_OUTPUT_PORT        7'h9
+`define MAKER_NUM_EVT_PKTS_SENT  7'ha
+`define MAKER_ENABLE             7'hb
 
 // Name: device_id
 // Description: Device identification

@@ -167,6 +167,8 @@ module user_data_path
      output [SRAM_ADDR_WIDTH-1:0]       rd_shi_addr,
      output                             rd_shi_req,
 
+     input                              enable,
+
      // interface to DRAM
      // interface to DRAM
      /* TBD */
@@ -259,12 +261,25 @@ module user_data_path
    wire                             temp_in_wr;
    wire                             temp_in_rdy;
 
+   wire [CTRL_WIDTH-1:0]            cria_ctrl;
+   wire [DATA_WIDTH-1:0]            cria_data;
+   wire                             cria_wr;
+   wire                             cria_rdy;
+
    wire                             temp_in_reg_req;
    wire                             temp_in_reg_ack;
    wire                             temp_in_reg_rd_wr_L;
    wire [`UDP_REG_ADDR_WIDTH-1:0]   temp_in_reg_addr;
    wire [`CPCI_NF2_DATA_WIDTH-1:0]  temp_in_reg_data;
    wire [UDP_REG_SRC_WIDTH-1:0]     temp_in_reg_src;
+
+   wire                             cria_req_in;
+   wire                             cria_ack_in;
+   wire                             cria_rd_wr_L_in;
+   wire [`UDP_REG_ADDR_WIDTH-1:0]   cria_addr_in;
+   wire [`CPCI_NF2_DATA_WIDTH-1:0]  cria_data_in;
+   wire [UDP_REG_SRC_WIDTH-1:0]     cria_src_in;
+
 
    //------- event capture wires/regs ------
    wire [CTRL_WIDTH-1:0]            evt_cap_in_ctrl;
@@ -285,6 +300,7 @@ module user_data_path
    wire                             wire_bloom_wr;
    wire [SRAM_ADDR_WIDTH-1:0]       wire_index_0;
    wire [SRAM_ADDR_WIDTH-1:0]       wire_index_1;
+   wire [95:0]                      wire_tuple;
 
    //--------- Connect the data path -----------
 
@@ -367,41 +383,82 @@ module user_data_path
         .UDP_REG_SRC_WIDTH (UDP_REG_SRC_WIDTH)
     ) temp (
 
-      .out_data              (op_lut_in_data),
-      .out_ctrl              (op_lut_in_ctrl),
-      .out_wr                (op_lut_in_wr),
-      .out_rdy               (op_lut_in_rdy),
+      .in_data                (temp_in_data),
+      .in_ctrl                (temp_in_ctrl),
+      .in_wr                  (temp_in_wr),
+      .in_rdy                 (temp_in_rdy),
 
-      .in_data              (temp_in_data),
-      .in_ctrl              (temp_in_ctrl),
-      .in_wr                (temp_in_wr),
-      .in_rdy               (temp_in_rdy),
+      .out_data               (cria_data),
+      .out_ctrl               (cria_ctrl),
+      .out_wr                 (cria_wr),
+      .out_rdy                (cria_rdy),  
 
       .bloom_rdy              (wire_bloom_rdy),
       .bloom_wr               (wire_bloom_wr),
       .index_0                (wire_index_0),
       .index_1                (wire_index_1),
+      .wire_tuple             (wire_tuple),
       .pkt_is_ack             (wire_is_ack),
 
-      .reg_req_in           (temp_in_reg_req),
-      .reg_ack_in           (temp_in_reg_ack),
-      .reg_rd_wr_L_in       (temp_in_reg_rd_wr_L),
-      .reg_addr_in          (temp_in_reg_addr),
-      .reg_data_in          (temp_in_reg_data),
-      .reg_src_in           (temp_in_reg_src),
+      .reg_req_in             (temp_in_reg_req),
+      .reg_ack_in             (temp_in_reg_ack),
+      .reg_rd_wr_L_in         (temp_in_reg_rd_wr_L),
+      .reg_addr_in            (temp_in_reg_addr),
+      .reg_data_in            (temp_in_reg_data),
+      .reg_src_in             (temp_in_reg_src),
 
-      .reg_req_out           (op_lut_in_reg_req),
-      .reg_ack_out           (op_lut_in_reg_ack),
-      .reg_rd_wr_L_out       (op_lut_in_reg_rd_wr_L),
-      .reg_addr_out          (op_lut_in_reg_addr),
-      .reg_data_out          (op_lut_in_reg_data),
-      .reg_src_out           (op_lut_in_reg_src),
+      .reg_req_out            (cria_req_in),
+      .reg_ack_out            (cria_ack_in),
+      .reg_rd_wr_L_out        (cria_rd_wr_L_in),
+      .reg_addr_out           (cria_addr_in),
+      .reg_data_out           (cria_data_in),
+      .reg_src_out            (cria_src_in),
 
       .clk              (clk),
       .reset            (reset));
 
+
+      wire [DATA_WIDTH-1:0]      wire_med_din;
+      wire                       wire_fifo_wr;
+      wire                       wire_fifo_full;
+
+      databus #(
+         .WORD_WIDTH(64)
+      ) cria_novo_pacote (
+      .in_data                (cria_data),
+      .in_ctrl                (cria_ctrl),
+      .in_wr                  (cria_wr),
+      .in_rdy                 (cria_rdy),
+
+      .out_data               (op_lut_in_data),
+      .out_ctrl               (op_lut_in_ctrl),
+      .out_wr                 (op_lut_in_wr),
+      .out_rdy                (op_lut_in_rdy),
+
+      .reg_req_in             (cria_req_in),
+      .reg_ack_in             (cria_ack_in),
+      .reg_rd_wr_L_in         (cria_rd_wr_L_in),
+      .reg_addr_in            (cria_addr_in),
+      .reg_data_in            (cria_data_in),
+      .reg_src_in             (cria_src_in),
+
+      .reg_req_out            (op_lut_in_reg_req),
+      .reg_ack_out            (op_lut_in_reg_ack),
+      .reg_rd_wr_L_out        (op_lut_in_reg_rd_wr_L),
+      .reg_addr_out           (op_lut_in_reg_addr),
+      .reg_data_out           (op_lut_in_reg_data),
+      .reg_src_out            (op_lut_in_reg_src),
+     
+      .pld_fifo_din           (wire_med_din),
+      .pld_fifo_full          (wire_med_full),
+      .pld_fifo_wr            (wire_med_wr),
+
+      .clk                    (clk),
+      .reset                  (reset)); 
+
+   
     bloom_filter #(
-        .DATA_WIDTH(SRAM_DATA_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH),
         .CTRL_WIDTH(CTRL_WIDTH),
         .UDP_REG_SRC_WIDTH (UDP_REG_SRC_WIDTH),
         .SRAM_ADDR_WIDTH(SRAM_ADDR_WIDTH)
@@ -410,6 +467,7 @@ module user_data_path
       .is_ack                    (wire_is_ack),
       .index_0                   (wire_index_0),
       .index_1                   (wire_index_1),
+      .tuple                     (wire_tuple),
       .in_rdy                    (wire_bloom_rdy),
       .in_wr                     (wire_bloom_wr),
 
@@ -435,6 +493,12 @@ module user_data_path
       .rd_shi_data                  (rd_shi_data),
       .rd_shi_ack                   (rd_shi_ack),
       .rd_shi_vld                   (rd_shi_vld),
+
+      .enable                       (enable),
+
+      .in_fifo_med_din              (wire_med_din),
+      .in_fifo_med_full             (wire_med_full),
+      .in_fifo_med_wr               (wire_med_wr),
 
       .clk                      (clk),
       .reset                    (reset));

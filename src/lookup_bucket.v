@@ -1,6 +1,4 @@
 ///////////////////////////////////////////////////////////////////////////////
-// $Id: header_hash.v 3582 2008-04-10 19:53:37Z jnaous $
-//
 // Module: lookup_bucket.v
 // Project: temp 
 // Description: the index regarding the i-th bucket will be filled with 1 while 

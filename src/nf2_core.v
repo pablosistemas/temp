@@ -501,6 +501,8 @@ module nf2_core #(
    wire                             wr_shi_req;
    wire                             wr_shi_ack;
 
+   wire                             enable;
+
    generate
    if(DATA_WIDTH==64) begin: sram64
       (* keep_hierarchy = "false" *) sram_arbiter
@@ -546,6 +548,7 @@ module nf2_core #(
          .sram_reg_ack       (sram_reg_ack),
 
          // --- Misc
+         .enable             (enable), 
          .reset              (reset),
          .clk                (core_clk_int)
          );
@@ -563,58 +566,6 @@ module nf2_core #(
       assign sram2_tri_en  = sram_tri_en;
 
    end // block: sram64
-   else if(DATA_WIDTH==32) begin:sram32
-      (* keep_hierarchy = "false" *) sram_arbiter
-        #(.SRAM_DATA_WIDTH(DATA_WIDTH+CTRL_WIDTH))
-      sram_arbiter
-        (// --- Requesters   (read and/or write)
-         .wr_0_req           (wr_0_req),
-         .wr_0_addr          (wr_0_addr),
-         .wr_0_data          (wr_0_data),
-         .wr_0_ack           (wr_0_ack),
-
-         .rd_0_req           (rd_0_req),
-         .rd_0_addr          (rd_0_addr),
-         .rd_0_data          (rd_0_data),
-         .rd_0_ack           (rd_0_ack),
-         .rd_0_vld           (rd_0_vld),
-
-          // --- sram_access
-         /*.sram_addr1         (sram_addr1),
-         .sram_addr2         (sram_addr2),*/
-         .sram_addr          (sram_addr),
-         .sram_wr_data       (sram_wr_data),
-         .sram_rd_data       (sram_rd_data),
-         .sram_we            (sram_we),
-         .sram_bw            (sram_bw),
-         .sram_tri_en        (sram_tri_en),
-
-         // --- register interface
-         .sram_reg_req       (sram_reg_req),
-         .sram_reg_rd_wr_L   (sram_reg_rd_wr_L),
-         .sram_reg_addr      (sram_reg_addr),
-         .sram_reg_wr_data   (sram_reg_wr_data),
-         .sram_reg_rd_data   (sram_reg_rd_data),
-         .sram_reg_ack       (sram_reg_ack),
-
-          // --- Misc
-         .reset              (reset),
-         .clk                (core_clk_int)
-         );
-
-      assign sram1_wr_data = sram_wr_data;
-      assign sram2_wr_data = 36'b0;
-      assign sram_rd_data = sram1_rd_data;
-      assign sram1_we     = sram_we;
-      assign sram2_we     = ~ 1'b0; // Active low
-      assign sram1_bw     = sram_bw;
-      assign sram2_bw     = ~ 1'b0; // Active low
-      assign sram1_addr   = sram_addr;//1;
-      assign sram2_addr   = 'h0;
-      assign sram1_tri_en  = sram_tri_en;
-      assign sram2_tri_en  = 1'b0;
-
-   end // block: sram32
    endgenerate
 
    assign    sram1_zz = 1'b0;
@@ -813,6 +764,8 @@ module nf2_core #(
         .rd_shi_vld              (rd_shi_vld),
         .rd_shi_addr             (rd_shi_addr),
         .rd_shi_req              (rd_shi_req),
+
+        .enable                  (enable),
 
         // interface to DRAM
         /* TBD */

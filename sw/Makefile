@@ -6,7 +6,12 @@ CFLAGS = -g
 CC = gcc
 LDFLAGS = -lncurses
 
-all : registers counterdump
+all : compile  
+#	registers counterdump
+
+compile:
+	gcc -std=gnu99 counterdump.c -Wall -lpthread ../../../lib/C/common/nf2util.o ../../../lib/C/common/nf2util_proxy_common.o ../lib/C/reg_defines_temp.h
+
 
 registers:
 	$(NF_ROOT)/bin/nf_register_gen.pl --project reference_nic

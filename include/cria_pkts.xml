@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nf:module xmlns:nf="http://www.NetFPGA.org/NF2_register_system" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.NetFPGA.org/NF2_register_system NF2_register_system.xsd ">
+	<nf:name>cria_pkts</nf:name>
+	<nf:prefix>maker</nf:prefix>
+	<nf:location>udp</nf:location>
+	<nf:description>Packet Header Registers</nf:description>
+	<nf:blocksize>512</nf:blocksize>
+	<nf:registers>
+      <nf:register>
+         <nf:name>dst_mac</nf:name>
+			<nf:description>destination MAC</nf:description>
+			<nf:type>ethernet_addr</nf:type>
+      </nf:register>
+      <nf:register>
+         <nf:name>src_mac</nf:name>
+			<nf:description>source MAC</nf:description>
+			<nf:type>ethernet_addr</nf:type>
+      </nf:register>
+      <nf:register>
+         <nf:name>ethertype</nf:name>
+			<nf:description>ethertype</nf:description>
+			<nf:type>software32</nf:type>
+		</nf:register>
+      <nf:register>
+         <nf:name>ip_dst</nf:name>
+			<nf:description>destination IP</nf:description>
+			<nf:type>ip_addr</nf:type>
+		</nf:register>
+      <nf:register>
+         <nf:name>ip_src</nf:name>
+			<nf:description>source IP</nf:description>
+			<nf:type>ip_addr</nf:type>
+		</nf:register>
+      <nf:register>
+         <nf:name>udp_src_port</nf:name>
+			<nf:description>UDP src port</nf:description>
+			<nf:type>software32</nf:type>
+      </nf:register>
+      <nf:register>
+         <nf:name>udp_dst_port</nf:name>
+			<nf:description>UDP dst port</nf:description>
+			<nf:type>software32</nf:type>
+		</nf:register>
+      <nf:register>
+         <nf:name>output_port</nf:name>
+			<nf:description>??</nf:description>
+			<nf:type>software32</nf:type>
+      </nf:register>
+      <nf:register>
+         <nf:name>num_evt_pkts_sent</nf:name>
+			<nf:description>numero de pkts enviados</nf:description>
+			<nf:type>software32</nf:type>
+      </nf:register>
+      <nf:register>
+         <nf:name>enable</nf:name>
+			<nf:description>??</nf:description>
+			<nf:type>software32</nf:type>
+      </nf:register>
+	</nf:registers>
+	<nf:constants>
+	</nf:constants>
+	<nf:types>
+	</nf:types>
+</nf:module>

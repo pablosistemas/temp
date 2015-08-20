@@ -91,6 +91,7 @@ use Exporter;
                 CPU_QUEUE_3_BASE_ADDR
                 SRAM_BASE_ADDR
                 UDP_BASE_ADDR
+                MAKER_BASE_ADDR
                 IN_ARB_BASE_ADDR
                 BRAM_OQ_BASE_ADDR
                 DRAM_BASE_ADDR
@@ -412,6 +413,18 @@ use Exporter;
                 CPU_QUEUE_3_TX_QUEUE_NUM_OVERRUNS_REG
                 CPU_QUEUE_3_TX_QUEUE_NUM_WORDS_PUSHED_REG
                 CPU_QUEUE_3_TX_QUEUE_NUM_BYTES_PUSHED_REG
+                MAKER_DST_MAC_HI_REG
+                MAKER_DST_MAC_LO_REG
+                MAKER_SRC_MAC_HI_REG
+                MAKER_SRC_MAC_LO_REG
+                MAKER_ETHERTYPE_REG
+                MAKER_IP_DST_REG
+                MAKER_IP_SRC_REG
+                MAKER_UDP_SRC_PORT_REG
+                MAKER_UDP_DST_PORT_REG
+                MAKER_OUTPUT_PORT_REG
+                MAKER_NUM_EVT_PKTS_SENT_REG
+                MAKER_ENABLE_REG
                 IN_ARB_NUM_PKTS_SENT_REG
                 IN_ARB_LAST_PKT_WORD_0_HI_REG
                 IN_ARB_LAST_PKT_WORD_0_LO_REG
@@ -741,8 +754,9 @@ sub CPU_QUEUE_2_BASE_ADDR ()   { 0x0780000; }
 sub CPU_QUEUE_3_BASE_ADDR ()   { 0x07c0000; }
 sub SRAM_BASE_ADDR ()          { 0x1000000; }
 sub UDP_BASE_ADDR ()           { 0x2000000; }
-sub IN_ARB_BASE_ADDR ()        { 0x2000000; }
-sub BRAM_OQ_BASE_ADDR ()       { 0x2000100; }
+sub MAKER_BASE_ADDR ()         { 0x2000000; }
+sub IN_ARB_BASE_ADDR ()        { 0x2000200; }
+sub BRAM_OQ_BASE_ADDR ()       { 0x2000300; }
 sub DRAM_BASE_ADDR ()          { 0x4000000; }
 
 sub CPU_QUEUE_OFFSET ()   { 0x0040000; }
@@ -1117,56 +1131,72 @@ sub CPU_QUEUE_3_TX_QUEUE_NUM_BYTES_PUSHED_REG ()       { 0x07c003c;}
 # Name: SRAM (SRAM)
 # Description: SRAM
 
+# Name: cria_pkts (MAKER)
+# Description: Packet Header Registers
+# File: projects/temp/include/cria_pkts.xml
+sub MAKER_DST_MAC_HI_REG ()          { 0x2000000;}
+sub MAKER_DST_MAC_LO_REG ()          { 0x2000004;}
+sub MAKER_SRC_MAC_HI_REG ()          { 0x2000008;}
+sub MAKER_SRC_MAC_LO_REG ()          { 0x200000c;}
+sub MAKER_ETHERTYPE_REG ()           { 0x2000010;}
+sub MAKER_IP_DST_REG ()              { 0x2000014;}
+sub MAKER_IP_SRC_REG ()              { 0x2000018;}
+sub MAKER_UDP_SRC_PORT_REG ()        { 0x200001c;}
+sub MAKER_UDP_DST_PORT_REG ()        { 0x2000020;}
+sub MAKER_OUTPUT_PORT_REG ()         { 0x2000024;}
+sub MAKER_NUM_EVT_PKTS_SENT_REG ()   { 0x2000028;}
+sub MAKER_ENABLE_REG ()              { 0x200002c;}
+
 # Name: in_arb (IN_ARB)
 # Description: Round-robin input arbiter
 # File: lib/verilog/core/input_arbiter/rr_input_arbiter/xml/rr_input_arbiter.xml
-sub IN_ARB_NUM_PKTS_SENT_REG ()        { 0x2000000;}
-sub IN_ARB_LAST_PKT_WORD_0_HI_REG ()   { 0x2000004;}
-sub IN_ARB_LAST_PKT_WORD_0_LO_REG ()   { 0x2000008;}
-sub IN_ARB_LAST_PKT_CTRL_0_REG ()      { 0x200000c;}
-sub IN_ARB_LAST_PKT_WORD_1_HI_REG ()   { 0x2000010;}
-sub IN_ARB_LAST_PKT_WORD_1_LO_REG ()   { 0x2000014;}
-sub IN_ARB_LAST_PKT_CTRL_1_REG ()      { 0x2000018;}
-sub IN_ARB_STATE_REG ()                { 0x200001c;}
+sub IN_ARB_NUM_PKTS_SENT_REG ()        { 0x2000200;}
+sub IN_ARB_LAST_PKT_WORD_0_HI_REG ()   { 0x2000204;}
+sub IN_ARB_LAST_PKT_WORD_0_LO_REG ()   { 0x2000208;}
+sub IN_ARB_LAST_PKT_CTRL_0_REG ()      { 0x200020c;}
+sub IN_ARB_LAST_PKT_WORD_1_HI_REG ()   { 0x2000210;}
+sub IN_ARB_LAST_PKT_WORD_1_LO_REG ()   { 0x2000214;}
+sub IN_ARB_LAST_PKT_CTRL_1_REG ()      { 0x2000218;}
+sub IN_ARB_STATE_REG ()                { 0x200021c;}
 
 # Name: bram_output_queues (BRAM_OQ)
 # Description: BRAM-based output queues
 # File: lib/verilog/core/output_queues/bram_output_queues/xml/bram_output_queues.xml
-sub BRAM_OQ_DISABLE_QUEUES_REG ()                   { 0x2000100;}
-sub BRAM_OQ_QUEUE_0_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x2000180;}
-sub BRAM_OQ_QUEUE_0_NUM_PKTS_RECEIVED_REG ()        { 0x2000184;}
-sub BRAM_OQ_QUEUE_0_NUM_PKTS_DROPPED_REG ()         { 0x2000188;}
-sub BRAM_OQ_QUEUE_0_NUM_WORDS_IN_QUEUE_REG ()       { 0x200018c;}
-sub BRAM_OQ_QUEUE_1_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x2000190;}
-sub BRAM_OQ_QUEUE_1_NUM_PKTS_RECEIVED_REG ()        { 0x2000194;}
-sub BRAM_OQ_QUEUE_1_NUM_PKTS_DROPPED_REG ()         { 0x2000198;}
-sub BRAM_OQ_QUEUE_1_NUM_WORDS_IN_QUEUE_REG ()       { 0x200019c;}
-sub BRAM_OQ_QUEUE_2_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x20001a0;}
-sub BRAM_OQ_QUEUE_2_NUM_PKTS_RECEIVED_REG ()        { 0x20001a4;}
-sub BRAM_OQ_QUEUE_2_NUM_PKTS_DROPPED_REG ()         { 0x20001a8;}
-sub BRAM_OQ_QUEUE_2_NUM_WORDS_IN_QUEUE_REG ()       { 0x20001ac;}
-sub BRAM_OQ_QUEUE_3_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x20001b0;}
-sub BRAM_OQ_QUEUE_3_NUM_PKTS_RECEIVED_REG ()        { 0x20001b4;}
-sub BRAM_OQ_QUEUE_3_NUM_PKTS_DROPPED_REG ()         { 0x20001b8;}
-sub BRAM_OQ_QUEUE_3_NUM_WORDS_IN_QUEUE_REG ()       { 0x20001bc;}
-sub BRAM_OQ_QUEUE_4_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x20001c0;}
-sub BRAM_OQ_QUEUE_4_NUM_PKTS_RECEIVED_REG ()        { 0x20001c4;}
-sub BRAM_OQ_QUEUE_4_NUM_PKTS_DROPPED_REG ()         { 0x20001c8;}
-sub BRAM_OQ_QUEUE_4_NUM_WORDS_IN_QUEUE_REG ()       { 0x20001cc;}
-sub BRAM_OQ_QUEUE_5_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x20001d0;}
-sub BRAM_OQ_QUEUE_5_NUM_PKTS_RECEIVED_REG ()        { 0x20001d4;}
-sub BRAM_OQ_QUEUE_5_NUM_PKTS_DROPPED_REG ()         { 0x20001d8;}
-sub BRAM_OQ_QUEUE_5_NUM_WORDS_IN_QUEUE_REG ()       { 0x20001dc;}
-sub BRAM_OQ_QUEUE_6_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x20001e0;}
-sub BRAM_OQ_QUEUE_6_NUM_PKTS_RECEIVED_REG ()        { 0x20001e4;}
-sub BRAM_OQ_QUEUE_6_NUM_PKTS_DROPPED_REG ()         { 0x20001e8;}
-sub BRAM_OQ_QUEUE_6_NUM_WORDS_IN_QUEUE_REG ()       { 0x20001ec;}
-sub BRAM_OQ_QUEUE_7_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x20001f0;}
-sub BRAM_OQ_QUEUE_7_NUM_PKTS_RECEIVED_REG ()        { 0x20001f4;}
-sub BRAM_OQ_QUEUE_7_NUM_PKTS_DROPPED_REG ()         { 0x20001f8;}
-sub BRAM_OQ_QUEUE_7_NUM_WORDS_IN_QUEUE_REG ()       { 0x20001fc;}
+sub BRAM_OQ_DISABLE_QUEUES_REG ()                   { 0x2000300;}
+sub BRAM_OQ_QUEUE_0_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x2000380;}
+sub BRAM_OQ_QUEUE_0_NUM_PKTS_RECEIVED_REG ()        { 0x2000384;}
+sub BRAM_OQ_QUEUE_0_NUM_PKTS_DROPPED_REG ()         { 0x2000388;}
+sub BRAM_OQ_QUEUE_0_NUM_WORDS_IN_QUEUE_REG ()       { 0x200038c;}
+sub BRAM_OQ_QUEUE_1_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x2000390;}
+sub BRAM_OQ_QUEUE_1_NUM_PKTS_RECEIVED_REG ()        { 0x2000394;}
+sub BRAM_OQ_QUEUE_1_NUM_PKTS_DROPPED_REG ()         { 0x2000398;}
+sub BRAM_OQ_QUEUE_1_NUM_WORDS_IN_QUEUE_REG ()       { 0x200039c;}
+sub BRAM_OQ_QUEUE_2_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x20003a0;}
+sub BRAM_OQ_QUEUE_2_NUM_PKTS_RECEIVED_REG ()        { 0x20003a4;}
+sub BRAM_OQ_QUEUE_2_NUM_PKTS_DROPPED_REG ()         { 0x20003a8;}
+sub BRAM_OQ_QUEUE_2_NUM_WORDS_IN_QUEUE_REG ()       { 0x20003ac;}
+sub BRAM_OQ_QUEUE_3_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x20003b0;}
+sub BRAM_OQ_QUEUE_3_NUM_PKTS_RECEIVED_REG ()        { 0x20003b4;}
+sub BRAM_OQ_QUEUE_3_NUM_PKTS_DROPPED_REG ()         { 0x20003b8;}
+sub BRAM_OQ_QUEUE_3_NUM_WORDS_IN_QUEUE_REG ()       { 0x20003bc;}
+sub BRAM_OQ_QUEUE_4_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x20003c0;}
+sub BRAM_OQ_QUEUE_4_NUM_PKTS_RECEIVED_REG ()        { 0x20003c4;}
+sub BRAM_OQ_QUEUE_4_NUM_PKTS_DROPPED_REG ()         { 0x20003c8;}
+sub BRAM_OQ_QUEUE_4_NUM_WORDS_IN_QUEUE_REG ()       { 0x20003cc;}
+sub BRAM_OQ_QUEUE_5_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x20003d0;}
+sub BRAM_OQ_QUEUE_5_NUM_PKTS_RECEIVED_REG ()        { 0x20003d4;}
+sub BRAM_OQ_QUEUE_5_NUM_PKTS_DROPPED_REG ()         { 0x20003d8;}
+sub BRAM_OQ_QUEUE_5_NUM_WORDS_IN_QUEUE_REG ()       { 0x20003dc;}
+sub BRAM_OQ_QUEUE_6_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x20003e0;}
+sub BRAM_OQ_QUEUE_6_NUM_PKTS_RECEIVED_REG ()        { 0x20003e4;}
+sub BRAM_OQ_QUEUE_6_NUM_PKTS_DROPPED_REG ()         { 0x20003e8;}
+sub BRAM_OQ_QUEUE_6_NUM_WORDS_IN_QUEUE_REG ()       { 0x20003ec;}
+sub BRAM_OQ_QUEUE_7_NUM_PKT_BYTES_RECEIVED_REG ()   { 0x20003f0;}
+sub BRAM_OQ_QUEUE_7_NUM_PKTS_RECEIVED_REG ()        { 0x20003f4;}
+sub BRAM_OQ_QUEUE_7_NUM_PKTS_DROPPED_REG ()         { 0x20003f8;}
+sub BRAM_OQ_QUEUE_7_NUM_WORDS_IN_QUEUE_REG ()       { 0x20003fc;}
 
-sub BRAM_OQ_QUEUE_GROUP_BASE_ADDR ()  { 0x2000180; }
+sub BRAM_OQ_QUEUE_GROUP_BASE_ADDR ()  { 0x2000380; }
 sub BRAM_OQ_QUEUE_GROUP_INST_OFFSET() { 0x0000010; }
 
 # Name: DRAM (DRAM)

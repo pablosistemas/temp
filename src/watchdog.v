@@ -15,6 +15,7 @@ module watchdog
     output reg                         update,
 
     // --- Misc
+    input                              enable,
     input                              clk,
     input                              reset);
 
@@ -40,8 +41,13 @@ module watchdog
    always @(posedge clk) begin
       if(reset) begin
          watchdog_counter <= 0;
+      end else if (enable) begin
+         if(update)
+            watchdog_counter <= 0;
+         else
+            watchdog_counter <= watchdog_counter + 1;
       end else
-         watchdog_counter <= watchdog_counter + 1;
+         watchdog_counter <= watchdog_counter;
    end
 
    always @(posedge clk) begin
@@ -49,7 +55,7 @@ module watchdog
          update <= 0;
       end
       else begin
-         if (watchdog_counter == TIMER_LIMIT) begin
+         if (watchdog_counter == TIMER_LIMIT - 1) begin
             update <= 1;
          end
          else begin
@@ -57,5 +63,14 @@ module watchdog
          end
       end
    end
+
+   /* DEBUG */
+   //synthesis translate_off
+   always @(posedge clk) begin
+      $display("wdcounter: %d\n",watchdog_counter);
+      if(update)
+         $display("wdupdate\n");
+   end
+   //synthesis translate_on
 
 endmodule

@@ -58,6 +58,8 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
     output reg                         sram_tri_en,
 
     // --- Misc
+   
+    output                             enable,
 
     input reset,
     input clk
@@ -73,6 +75,8 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
 
    reg                       sram_reg_addr_is_high, sram_reg_addr_is_high_d1, sram_reg_addr_is_high_d2;
    reg                        do_reset;
+
+   assign enable = ~do_reset;
 
    always @(posedge clk) begin
       if(reset) begin

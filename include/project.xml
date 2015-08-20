@@ -37,6 +37,7 @@
     <nf:group name="udp">
       <nf:instance name="in_arb"/>
       <nf:instance name="bram_output_queues" />
+      <nf:instance name="cria_pkts"/>
     </nf:group>
   </nf:memalloc>
 </nf:project>

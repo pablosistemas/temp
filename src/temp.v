@@ -33,6 +33,7 @@ module temp
       output reg                          bloom_wr,   
       output [HASH_BITS-1:0]              index_0,
       output [HASH_BITS-1:0]              index_1,
+      output [TUPLE_SZ-1:0]               wire_tuple,
       output reg                          pkt_is_ack,         
 
       // --- Register interface
@@ -115,6 +116,8 @@ module temp
 
    assign out_ctrl = in_fifo_ctrl;
    assign out_data = in_fifo_data;
+
+   assign wire_tuple = tuple;
 
    always @(*) begin
       if (pkt_is_ack) begin

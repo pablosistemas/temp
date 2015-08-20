@@ -2,19 +2,20 @@
 
 module bloom_filter
    #(
-      parameter DATA_WIDTH = 64,
-      parameter CTRL_WIDTH = DATA_WIDTH/8,
-      parameter SRAM_ADDR_WIDTH = 19,
-      parameter SRAM_DATA_WIDTH = 72,
-      parameter BITSBUCKET    = 4, 
-      parameter NUM_BUCKETS  = 12,
-      parameter INDEX_LEN = NUM_BUCKETS*BITSBUCKET,
+      parameter DATA_WIDTH =64,
+      parameter CTRL_WIDTH =DATA_WIDTH/8,
+      parameter SRAM_ADDR_WIDTH =19,
+      parameter SRAM_DATA_WIDTH =72,
+      parameter NUM_BITS_BUCKET =4, 
+      parameter RESERVED =16,
+      parameter NUM_BUCKETS =(SRAM_DATA_WIDTH-RESERVED)/NUM_BITS_BUCKET,
       parameter UDP_REG_SRC_WIDTH = 2
    ) (
 
       input                               	is_ack,
       input    [SRAM_ADDR_WIDTH-1:0]      	index_0,
       input    [SRAM_ADDR_WIDTH-1:0]      	index_1,
+      input [95:0]                           tuple,
 		output											in_rdy,
 		input												in_wr,
 
@@ -41,6 +42,13 @@ module bloom_filter
       input                               	rd_shi_ack,
       input                               	rd_shi_vld,
 
+      input                                  enable,
+
+   /* interface to MED fifo */
+      output reg [WORD_WIDTH-1:0]    			in_fifo_med_din,
+      output reg                     			in_fifo_med_wr,
+      input                    					in_fifo_med_full,
+
       // misc
       input                                	reset,
       input                                	clk
@@ -48,13 +56,29 @@ module bloom_filter
 
    /* ----------Estados----------*/
 
-	localparam SRAM_READ = 1;
-	localparam SRAM_WRITE = 2;
+	localparam ADDR1 =1;
+	localparam ADDR2 =2;
+   localparam WAIT_ADDR1 =4;
+   localparam WAIT_ADDR2 =8;
+   localparam WRITE_ADDR1 =16;
+   localparam WRITE_ADDR2 =32;
+   localparam WAIT_WR_ADDR1 =64;
+   localparam WAIT_WR_ADDR2 =128;
+   localparam PAYLOAD1 =256;
+   localparam PAYLOAD2 =512;
 	
-	localparam NUM_STATES = 2;
+	localparam NUM_STATES = 10;
 
-   localparam HASH_FIFO_DATA_WIDTH = 1 + 2*SRAM_ADDR_WIDTH;
+   localparam TUPLE_WIDTH =96;
+
+   localparam HASH_FIFO_DATA_WIDTH = 1+2*SRAM_ADDR_WIDTH+TUPLE_WIDTH;
    localparam SRAM_FIFO_DATA_WIDTH = SRAM_DATA_WIDTH;
+
+   localparam BLOOM_POS = 16; //num bits reserved
+   localparam BITS_SHIFT = log2(NUM_BUCKETS);
+
+   localparam CLK = 8*10**-9;
+   localparam TIMER = 50;
 
    // Define the log2 function
    `LOG2_FUNC
@@ -65,13 +89,16 @@ module bloom_filter
    wire [HASH_FIFO_DATA_WIDTH-1:0]        in_fifo_hash_dout;
    wire                    					in_fifo_hash_wr;
    wire      						            in_fifo_hash_full;
+   wire                                   hash_is_ack;
       
    /* interface to SRAM fifo */
-   reg                     					in_fifo_shift_rd_en;
-   wire                    					in_fifo_shift_empty;
-   wire [SRAM_DATA_WIDTH-1:0]    			in_fifo_shift_dout;
-   wire                    					in_fifo_shift_wr;
-   wire                    					in_fifo_shift_full;   
+   reg                     					in_fifo_sram_rd_en;
+   wire                    					in_fifo_sram_empty;
+   wire [SRAM_DATA_WIDTH-1:0]    			in_fifo_sram_dout;
+   wire                    					in_fifo_sram_wr;
+   wire                    					in_fifo_sram_full;
+
+
 
    /* interface to SRAM */
    reg [SRAM_DATA_WIDTH-1:0]					wr_data_next;
@@ -84,53 +111,133 @@ module bloom_filter
 
 	reg [NUM_STATES-1:0]							state, state_next;
 
-   reg [SRAM_DATA_WIDTH-1:0]              temp_data;
+   wire                                   watchdog;
 
-   wire                                   update_bucket;
+   wire [SRAM_ADDR_WIDTH-1:0]             addr1, addr2;
+   wire [SRAM_ADDR_WIDTH-1:0]             low_addr, high_addr;
+   wire [SRAM_ADDR_WIDTH-1:0]             last_addr;
+   wire [SRAM_DATA_WIDTH-1:0]             updated_data;
+   wire [SRAM_DATA_WIDTH-1:0]             dado_deslocado;
+   wire [SRAM_DATA_WIDTH-1:0]             updated_ack;
+
+   reg [BITS_SHIFT-1:0]                   cur_bucket;
+   reg [BLOOM_POS-BITS_SHIFT-1:0]         cur_loop;
 	
 	/* ----------- local assignments -----------*/
 	/* hash FIFO */
    assign in_rdy = !in_fifo_hash_full;
 	assign in_fifo_hash_wr = in_wr;
-   /* SRAM FIFO */
-   assign in_fifo_shift_wr = rd_vld;
 
-	/* --------------instances of external modules------------------ */
-	
+   /* SRAM FIFO */
+   assign in_fifo_sram_wr = rd_vld;
+
+   assign hash_is_ack = in_fifo_hash_dout[HASH_FIFO_DATA_WIDTH-1];
+   assign addr1 = in_fifo_hash_dout[SRAM_ADDR_WIDTH-1:0];
+   assign addr2 = in_fifo_hash_dout[2*SRAM_ADDR_WIDTH-1:SRAM_ADDR_WIDTH];
+   assign tuple_ptr = in_fifo_hash_dout[HASH_FIFO_DATA_WIDTH-2:HASH_FIFO_DATA_WIDTH-1-TUPLE_WIDTH];
+   
+   assign low_addr = addr1 < addr2?addr1:addr2;
+   assign high_addr = addr1 >= addr2?addr1:addr2;
+
+   /* updates the data that will be used if hash was calculated
+      * over data packet */
+   assign updated_data = dado_deslocado+{{(NUM_BITS_BUCKET-1){1'b0}},1'b1,{(SRAM_DATA_WIDTH-NUM_BITS_BUCKET){1'b0}}};
+  
+   /* updates the data that will be used if hash was calculated
+      * over ack packet */
+   generate
+      genvar i;
+      for(i=0;i < NUM_BUCKETS;i=i+1) begin: updt_bloom_ack
+         assign updated_ack[BLOOM_POS+(i+1)*NUM_BITS_BUCKET-1:BLOOM_POS+i*NUM_BITS_BUCKET] = dado_deslocado[BLOOM_POS+(i+1)*NUM_BITS_BUCKET-1:BLOOM_POS+i*NUM_BITS_BUCKET]-indice[i];
+      end
+   endgenerate
+
+   /* evaluates buckets-diff by index */
+   wire [BITS_SHIFT-1:0]   latencia;
+   wire [31:0]             medicao;
+   reg [BITS_SHIFT-1:0]    medicao1, medicao1_next;
+   reg [BITS_SHIFT-1:0]    medicao2, medicao2_next;
+
+   generate
+   genvar j;
+      assign latencia = 0;
+      for(j=0;j<NUM_BUCKETS;j=j+1) begin: latencia_mod
+         assign latencia = indice[j]?j:0;
+      end
+   endgenerate
+
+   /* if medicao1 differs from medicao2 means false positive */
+   assign medicao = medicao1==medicao2?medicao1:0;
+
+
+   /* builds the packet word with latency measured */
+   localparam WORD_WIDTH = DATA_WIDTH; //96+BITS_SHIFT; // 2*IP+2*PORTA+latencia
+
+/* --------------instances of external modules-------------- */
    /* fifo holds reqs and addr from write in BF */
    /* fifo in: {req_data,req_ack,hash1,hash2} */
-   fallthrough_small_fifo #(
+   fallthrough_small_fifo_old #(
          .WIDTH(HASH_FIFO_DATA_WIDTH), 
          .MAX_DEPTH_BITS(3)) in_fifo_hash 
-        (.din ({is_ack,index_0,index_1}),// in
-         .wr_en (in_fifo_hash_wr), // Write enable
-         .rd_en (in_fifo_hash_rd_en), // Read the next word 
-         .dout ({in_fifo_hash_dout}),
-         .full (in_fifo_hash_full),
-         .nearly_full (),
-         .empty (in_fifo_hash_empty),
-         .reset (reset),
-         .clk (clk));
+        (.din        ({is_ack,tuple,index_0,index_1}),// in
+         .wr_en      (in_fifo_hash_wr), // Write enable
+         .rd_en      (in_fifo_hash_rd_en),// Read the next word
+         .dout       ({in_fifo_hash_dout}),
+         .full       (in_fifo_hash_full),
+         .nearly_full(),
+         .empty      (in_fifo_hash_empty),
+         .reset      (reset),
+         .clk        (clk));
 
+   /* data came from SRAM */
+   fallthrough_small_fifo_old #(
+         .WIDTH(SRAM_DATA_WIDTH), 
+         .MAX_DEPTH_BITS(3)) in_fifo_sram
+        (.din        (rd_data),// in
+         .wr_en      (in_fifo_sram_wr), // Write enable
+         .rd_en      (in_fifo_sram_rd_en),// Read the next word
+         .dout       (in_fifo_sram_dout),
+         .full       (in_fifo_sram_full),
+         .nearly_full(),
+         .empty      (in_fifo_sram_empty),
+         .reset      (reset),
+         .clk        (clk));
+
+   /* look up the most recently updated bucket */   
    lookup_bucket 
      #(
-        .INPUT_WIDTH(SRAM_DATA_WIDTH),	
-        .OUTPUT_WIDTH(NUM_BUCKETS)) busca_bucket
-   	(
-   		.data	(temp_data),
-   		.index ({indice}));
-
-	/* fires an updating signal when reached time to shift 
-   * the current bucket */   	 
+      .INPUT_WIDTH(SRAM_DATA_WIDTH),	
+      .OUTPUT_WIDTH(NUM_BUCKETS),
+      .BUCKET_SZ(NUM_BITS_BUCKET),
+      .NUM_BUCKETS(NUM_BUCKETS)      
+     ) busca_bucket (
+   		.data	(dado_deslocado),
+   		.index (indice));
+  
+      /* updates data that came from SRAM */
+   atualiza_linha #(
+   		.DATA_WIDTH(SRAM_DATA_WIDTH), 
+   		.NUM_BUCKETS(NUM_BUCKETS),
+         .BUCKET_SZ(NUM_BITS_BUCKET),
+         .BLOOM_INIT_POS(BLOOM_POS)
+      ) atualiza_bucket_shift (
+         .data (in_fifo_sram_dout), 
+         .output_data (dado_deslocado), 
+         .cur_bucket (cur_bucket), 
+         .cur_loop (cur_loop));
+ 
+   /* fires an updating signal when reached time to shift 
+    * the current bucket */   	 
    watchdog
-     #(.TIMER_LIMIT  (50)) watchdog
+     #(.TIMER_LIMIT  (TIMER)) watchdog_module
    	(
-   		.update      (update_bucket),
+   		.update      (watchdog),
     // --- Misc
-    		.clk            (clk),
-    		.reset          (reset));
+         .enable        (enable),
+    		.clk           (clk),
+    		.reset         (reset));
 	 
-   shifter #(
+   shift_mark #(
       .SRAM_ADDR_WIDTH (SRAM_ADDR_WIDTH),
       .SRAM_DATA_WIDTH (SRAM_DATA_WIDTH),
       .NUM_REQS (5),
@@ -148,20 +255,166 @@ module bloom_filter
       .rd_shi_ack    (rd_shi_ack),
       .rd_shi_vld    (rd_shi_vld),
 
-      .watchdog_signal (update_bucket),
+      .enable        (enable),
+
+      .watchdog_signal (watchdog),
+
+      .cur_bucket    (cur_bucket),
+      .cur_loop      (cur_loop),
+      //.last_addr     (last_addr),
 
       .reset (reset),
-      .clk (clk)
-   );
+      .clk (clk));
 
-   /* This state machine only does shifts in memory.
-   *  We have installed two parallel bus in SRAM and
-   *  the arbiter module choices with priority criteria
-   *  defined in it. */
 	 always @(*) begin
 	 	/* FIFOS */
 	 	in_fifo_hash_rd_en = 0;
+      in_fifo_sram_rd_en = 0;
+      in_fifo_med_wr =0;
+      in_fifo_med_din =0;
+
 	 	/* SRAM */
+	 	{rd_req_next, wr_req_next} = 2'b0;
+	 	{rd_addr_next, wr_addr_next} = {rd_addr, wr_addr};
+	 	wr_data_next = wr_data;
+
+      /* medicoes */
+      medicao1_next = medicao1;
+      medicao2_next = medicao2;
+	 	
+      state_next = state;
+
+	 	case(state)
+	 		ADDR1: begin
+	 		if(!in_fifo_hash_empty) begin
+            rd_addr_next = low_addr;
+            rd_req_next = 1;
+            state_next = WAIT_ADDR1;
+	 		end
+	 		end 
+         WAIT_ADDR1: begin
+            if(rd_ack)
+               state_next = ADDR2;
+            else rd_req_next = 1;
+         end
+         ADDR2: begin
+            rd_addr_next = high_addr;
+            rd_req_next = 1;
+            state_next = WAIT_ADDR2;
+	 		end
+         WAIT_ADDR2: begin
+            if(rd_ack)
+               state_next = WRITE_ADDR1;
+            else rd_req_next = 1;
+         end
+         WRITE_ADDR1: begin
+            if (!in_fifo_sram_empty) begin
+               wr_req_next = 1;
+               wr_addr_next = low_addr;
+               if(hash_is_ack)
+                  wr_data_next = updated_ack;
+               else
+                  wr_data_next = updated_data;
+               state_next = WAIT_WR_ADDR1;
+            end
+         end
+         WAIT_WR_ADDR1: begin
+            if(wr_ack) begin
+               state_next = WRITE_ADDR2;
+               medicao1_next = latencia;
+               in_fifo_sram_rd_en = 1;
+            end else 
+               wr_req_next = 1;
+         end
+         WRITE_ADDR2: begin
+            wr_req_next = 1;
+            wr_addr_next = low_addr;
+            if(hash_is_ack)
+               wr_data_next = updated_ack;
+            else
+               wr_data_next = updated_data;
+            state_next = WAIT_WR_ADDR2;
+         end
+         WAIT_WR_ADDR2: begin
+            if(wr_ack) begin
+               state_next = PAYLOAD1; //ADDR1;
+               medicao2_next = latencia;
+               in_fifo_sram_rd_en = 1;
+            end else 
+               wr_req_next = 1;
+         end
+         PAYLOAD1: begin
+            /* write in fifo the word with results */
+            if(!in_fifo_med_full) begin //if fifo full, discard
+               in_fifo_med_din = tuple[95:32]; //ip1 e ip2
+               in_fifo_med_wr =1;
+               state_next = ADDR1;
+            end else
+               state_next = PAYLOAD2;
+         end
+         PAYLOAD2: begin
+            in_fifo_med_din = {tuple[31:0],medicao};
+            in_fifo_med_wr =1;
+            state_next = ADDR1;
+            /* catch next tuple */
+            in_fifo_hash_rd_en = 1;
+         end
+         default: begin
+            $display("DEFAULT BLOOM FILTER\n");
+            $stop;
+         end
+	 	endcase
+	 end
+	 
+	 always @(posedge clk) begin
+	 	if (reset) begin
+	 		state <= ADDR1;
+         wr_data <= 0;
+	 	   {rd_req,wr_req} <= 2'b0;
+         {rd_addr,wr_addr} <= 0;
+         {medicao1,medicao2} <=0;
+	 	end else begin
+         if(watchdog) begin
+            /* updates bloom filter counter */
+            cur_bucket <= cur_bucket+'h1;
+            if(cur_bucket == {BITS_SHIFT{1'b1}})
+               cur_loop <= cur_loop + 'h1;
+         end 
+         else begin
+            state <= state_next;
+            wr_data <= wr_data_next;
+            {rd_req,wr_req} <= {rd_req_next,wr_req_next};
+            {rd_addr,wr_addr} <= {rd_addr_next,wr_addr_next};
+            medicao1 <=medicao1_next;
+            medicao2 <=medicao2_next;
+         end
+      end	
+	 end //always @(posedge clk)
+
+   /* DEBUG */
+   //synthesis translate_off
+   always @(posedge clk) begin
+      if(state_next == WAIT_ADDR1)
+         $display("WAIT_ADDR1\n");
+      if(state_next == WAIT_ADDR2)
+         $display("WAIT_ADDR2\n");
+      if(rd_ack)
+         $display("RECV ACK\n");
+      if(in_fifo_hash_full) begin
+         $display("FIFO HASH FULL\n");
+         $stop;
+      end
+      if(state_next == ADDR1 && !in_fifo_hash_empty) begin
+         $display("HASH FIFO: %x %x\n",addr1,addr2);
+      end
+   end
+   //synthesis translate_on
+    
+endmodule
+
+/*
+*	 always @(*) begin
+	 	in_fifo_hash_rd_en = 0;
 	 	{rd_req_next, wr_req_next} = 2'b0;
 	 	{rd_addr_next, wr_addr_next} = {rd_addr, wr_addr};
 	 	wr_data_next = wr_data;
@@ -169,46 +422,54 @@ module bloom_filter
       state_next = state;
 
 	 	case(state)
-	 		SRAM_READ: begin
+	 		ADDR1: begin
 	 		if(!in_fifo_hash_empty) begin
-	 			in_fifo_hash_rd_en = 1;	
+            if(low_addr <= last_addr) begin
+               rd_addr_next = low_addr;
+               rd_req_next = 1;
+               state_next = WAIT_ADDR1;
+            end
 	 		end
-	 		end //SRAM_READ
-	 		SRAM_WRITE: begin
-	 		if(!in_fifo_hash_empty) begin
-	 					
+	 		end 
+         WAIT_ADDR1: begin
+            if(rd_ack)
+               state_next = ADDR2;
+            else rd_req_next = 1;
+         end
+         ADDR2: begin
+            if(high_addr <= last_addr) begin
+               rd_addr_next = high_addr;
+               rd_req_next = 1;
+               state_next = WAIT_ADDR2;
+            end
 	 		end
-	 		end //SRAM_WRITE
+         WAIT_ADDR2: begin
+            if(rd_ack)
+               state_next = WRITE_ADDR1;
+            else rd_req_next = 1;
+         end
+         WRITE_ADDR1: begin
+            if (!in_fifo_sram_empty) begin
+               if(hash_is_ack)
+                  wr_data_next = updated_ack;
+               else
+                  wr_data_next = updated_data;
+               in_fifo_hash_rd_en = 1;
+               state_next = WAIT_WR_ADDR1;
+            end
+         end
+         WAIT_WR_ADDR1: begin
+            if(wr_ack)
+               state_next = WRITE_ADDR2;
+            else 
+               wr_req_next = 1;
+         end
+         WRITE_ADDR2: begin
+            state_next = 
+         end
+         default: begin
+            $display("DEFAULT BLOOM FILTER\n");
+            $stop;
+         end
 	 	endcase
-	 end
-	 
-	 always @(posedge clk) begin
-	 	if (reset) begin
-	 		state <= SRAM_READ;
-         wr_data <= 0;
-	 	   {rd_req,wr_req} <= 2'b0;
-         {rd_addr,wr_addr} <= 0;
-	 	end else begin
-	 		state <= state_next;
-         wr_data <= wr_data_next;
-	 	   {rd_req,wr_req} <= {rd_req_next,wr_req_next};
-         {rd_addr,wr_addr} <= {rd_addr_next,wr_addr_next};
-      end	
-	 end //always @(posedge clk)
-
-   /* DEBUG */
-   //synthesis translate_off
-   always @(posedge clk) begin
-      if(in_fifo_hash_full) begin
-         $display("FIFO HASH FULL\n");
-         $stop;
-      end
-      if(!in_fifo_hash_empty) begin
-         $display("HASH FIFO: %x %x\n",
-   in_fifo_hash_dout[2*SRAM_ADDR_WIDTH-1:SRAM_ADDR_WIDTH],
-         in_fifo_hash_dout[SRAM_ADDR_WIDTH-1:0]);
-      end
-   end
-   //synthesis translate_on
-    
-endmodule
+	 end */
