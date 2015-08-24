@@ -41,7 +41,7 @@ module bloom_filter
       input [SRAM_DATA_WIDTH-1:0]         	rd_shi_data,
       input                               	rd_shi_ack,
       input                               	rd_shi_vld,
-
+      /* enable from sram arbiter */
       input                                  enable,
 
    /* interface to MED fifo */
@@ -78,7 +78,7 @@ module bloom_filter
    localparam BITS_SHIFT = log2(NUM_BUCKETS);
 
    localparam CLK = 8*10**-9;
-   localparam TIMER = 50;
+   localparam TIMER = 2**14;
 
    // Define the log2 function
    `LOG2_FUNC
@@ -241,7 +241,7 @@ module bloom_filter
       .SRAM_ADDR_WIDTH (SRAM_ADDR_WIDTH),
       .SRAM_DATA_WIDTH (SRAM_DATA_WIDTH),
       .NUM_REQS (5),
-      .ADDR_SHIFT (2**SRAM_ADDR_WIDTH)
+      .SHIFT_WIDTH (10)
    ) SRAM_shifter (
 
       .wr_shi_req    (wr_shi_req),
@@ -373,6 +373,8 @@ module bloom_filter
 	 	   {rd_req,wr_req} <= 2'b0;
          {rd_addr,wr_addr} <= 0;
          {medicao1,medicao2} <=0;
+         cur_bucket <= 'h0;
+         cur_loop <='h0;
 	 	end else begin
          if(watchdog) begin
             /* updates bloom filter counter */
@@ -380,14 +382,14 @@ module bloom_filter
             if(cur_bucket == {BITS_SHIFT{1'b1}})
                cur_loop <= cur_loop + 'h1;
          end 
-         else begin
+         //else begin
             state <= state_next;
             wr_data <= wr_data_next;
             {rd_req,wr_req} <= {rd_req_next,wr_req_next};
             {rd_addr,wr_addr} <= {rd_addr_next,wr_addr_next};
             medicao1 <=medicao1_next;
             medicao2 <=medicao2_next;
-         end
+         //end
       end	
 	 end //always @(posedge clk)
 

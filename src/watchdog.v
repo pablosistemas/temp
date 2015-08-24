@@ -67,7 +67,7 @@ module watchdog
    /* DEBUG */
    //synthesis translate_off
    always @(posedge clk) begin
-      $display("wdcounter: %d\n",watchdog_counter);
+      //$display("wdcounter: %d\n",watchdog_counter);
       if(update)
          $display("wdupdate\n");
    end
