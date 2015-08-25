@@ -88,8 +88,17 @@ module shift_mark
    wire [SRAM_DATA_WIDTH-1:0]             in_fifo_shift_dout;
    wire [SRAM_DATA_WIDTH-1:0]             shift_dout;
 
+   // persistency
+   reg                                    delay, delay_next;
+
    // watchdog
    reg                  watchdog_fired, watchdog_fired_next;
+
+   //bucket and loop
+   reg [BITS_SHIFT-1:0]                 bucket, bucket_next,
+                                          nxt_bucket;
+   reg [BLOOM_POS-BITS_SHIFT-1:0]       loop, loop_next,
+                                          nxt_loop;
    
 	/* ----------- local assignments -----------*/
    
@@ -199,8 +208,8 @@ module shift_mark
       ) atualiza_bucket_shift 
         (.data (in_fifo_shift_dout), 
          .output_data (shift_dout), 
-         .cur_bucket (cur_bucket), 
-         .cur_loop (cur_loop));
+         .cur_bucket (bucket),//cur_bucket), 
+         .cur_loop (loop));//cur_loop));
 
    /*  */
 	 always @(*) begin
@@ -224,6 +233,13 @@ module shift_mark
       /* watchdog */
       watchdog_fired_next = watchdog_fired;
 
+      //persistency
+      delay_next = delay;
+
+      //bucket and loop
+      bucket_next = bucket;
+      loop_next = loop;
+
 	 	case(state)
 	 		SRAM_READ: begin
 	 		if(!in_fifo_shift_full && enable) begin
@@ -232,11 +248,22 @@ module shift_mark
             else begin
                rd_shi_req_next = 1;
                state_next = WAIT_READ;
+
+               // persistency
+               delay_next = 0;
             end
          end 
          //else $stop; //remove this line 
          end
          WAIT_READ: begin
+         // persistency   
+         if(!rd_shi_ack && delay == 0)
+            delay_next = 1;
+         else if(!rd_shi_ack && delay) begin
+            delay_next = 0;  
+            rd_shi_req_next = 1;
+         end
+
          if(rd_shi_ack) begin
             $display("READ ack\n");
             if(rd_shi_addr == ADDR_BOUND-1) begin
@@ -268,10 +295,21 @@ module shift_mark
             //synthesis translate_off
             wr_data_wr_en = 1;
             //synthesis translate_on
+            
+            // persistency
+            delay_next = 0;
          end
          end //SRAM_WRITE
          WAIT_WRITE: begin
-         if(wr_shi_ack) begin
+         // persistency   
+         if(!wr_shi_ack && delay == 0)
+            delay_next = 1;
+         else if(!wr_shi_ack && delay) begin
+            delay_next = 0;  
+            wr_shi_req_next = 1;
+         end
+
+         else if(wr_shi_ack) begin
             $display("WRITE ack\n");
             state_next = SRAM_WRITE;
             //wr_shi_addr_next = wr_shi_addr + 1;
@@ -283,6 +321,12 @@ module shift_mark
             if(watchdog_fired) begin
                state_next = SRAM_READ;
                watchdog_fired_next = 0;
+
+               //bucket and loop
+               bucket_next = nxt_bucket;
+               loop_next = nxt_loop;
+
+               rd_shi_addr <= {SRAM_ADDR_WIDTH{1'b0}};
             end
          end //do nothing
          default: begin
@@ -302,6 +346,15 @@ module shift_mark
          
          // watchdog
          watchdog_fired <= 1'b0;
+
+         // bucket and loop - cur and next
+         bucket <= 0;
+         loop <= 0;
+         nxt_bucket <= 0;
+         nxt_loop <= 0;
+
+         // persistency
+         delay <= 0;
 	 	end else begin
          if(watchdog_signal) begin
             //state <= SRAM_READ;
@@ -314,17 +367,27 @@ module shift_mark
 
             // watchdog
             watchdog_fired <= 1'b1;
-         end else begin
-            state <= state_next;
-            wr_shi_data <= shift_dout; //wr_shi_data_next;
-            rd_shi_req <= rd_shi_req_next;
-            wr_shi_req <= wr_shi_req_next;
+         end 
+         else begin
             rd_shi_addr <= rd_shi_addr_next;
-            wr_shi_addr <= next_addr_dout; //wr_shi_addr_next;
-            reqs <= reqs_next;
-            //last_addr <= wr_shi_addr;
             watchdog_fired <= watchdog_fired_next;
          end
+         state <= state_next;
+         wr_shi_data <= shift_dout; //wr_shi_data_next;
+         rd_shi_req <= rd_shi_req_next;
+         wr_shi_req <= wr_shi_req_next;
+         wr_shi_addr <= next_addr_dout; //wr_shi_addr_next;
+         reqs <= reqs_next;
+            //last_addr <= wr_shi_addr;
+            
+         // persistency
+         delay <= delay_next;
+
+         //bucket and loop
+         nxt_bucket <= cur_bucket;
+         nxt_loop <= cur_loop;
+         bucket <= bucket_next;
+         loop <= loop_next;
       end	
 	 end //always @(posedge clk)
 

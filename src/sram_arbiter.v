@@ -120,7 +120,7 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
 
          //first pipeline stage
             sram_reg_addr_is_high <= sram_reg_addr[0];
-            /*if(sram_reg_req) begin
+            if(sram_reg_req) begin
                sram_addr <= sram_reg_addr[19:1];
                sram_wr_data_early2 <= sram_reg_addr[0] ? {sram_reg_wr_data,36'b0}:{36'h0,sram_reg_wr_data};
                sram_tri_en_early2 <= !sram_reg_rd_wr_L && sram_reg_req;
@@ -150,7 +150,7 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
                rd_0_vld_early3 <= rd_0_req;
                rd_0_ack <= rd_0_req;
             end
-            else*/ if(wr_1_req) begin
+            else if(wr_1_req) begin
                sram_addr <= wr_1_addr;
                sram_wr_data_early2 <= wr_1_data;
                sram_tri_en_early2 <= wr_1_req;
