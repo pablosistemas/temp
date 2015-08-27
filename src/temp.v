@@ -119,13 +119,14 @@ module temp
 
    assign wire_tuple = tuple;
 
-   always @(*) begin
+   always @(dstport,srcport,dstip,srcip,pkt_is_ack_next,pkt_is_ack) begin
       if (pkt_is_ack) begin
          tuple[15:0] =dstport;
          tuple[31:16] =srcport;
          tuple[63:32] =dstip;
          tuple[95:64] =srcip;
-      end else begin
+      end 
+      else begin
          tuple[15:0] =srcport;
          tuple[31:16] =dstport;
          tuple[63:32] =srcip;
@@ -244,8 +245,12 @@ module temp
             in_fifo_rd_en = 1;
             out_wr = 1;
             
-            if(in_fifo_data[4])
-               pkt_is_ack_next = 'b1;
+            if(in_fifo_data[4]) begin
+               pkt_is_ack_next = 1'b1;
+               $display("Ack\n");
+            end
+            else
+               $display("NotAck\n");
 
             state_next = BLOOM_CTRL;         
          end
@@ -253,6 +258,7 @@ module temp
       BLOOM_CTRL: begin
          if (bloom_rdy) begin
             bloom_wr = 1;
+            $display("tupla: %x\n",tuple);
             state_next = PAYLOAD;
          end
       end
@@ -275,6 +281,10 @@ module temp
          num_TCP <= 0;
          pkt_is_ack <= 0;
          
+         srcip <= 32'h0;
+         dstip <= 32'h0;
+         srcport <= 16'h0;
+         dstport <= 16'h0; 
       end else begin
          state <= state_next;
          num_TCP <= num_TCP_next;
@@ -316,7 +326,9 @@ module temp
       /*if(state_next == PAYLOAD)
          $display("PAYLOAD\n");*/
 
-      if(state == PAYLOAD && state_next == WAIT_PACKET) begin
+      //if(state == PAYLOAD && state_next == WAIT_PACKET) begin
+     
+      if(bloom_wr) begin
          $display("tupla: %x\n",tuple);
          $display("hash0: %x\nhash1: %x\n",index_0,index_1); 
       end

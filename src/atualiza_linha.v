@@ -45,12 +45,14 @@ module atualiza_linha
    always @(data) begin
       //synthesis translate_off
       if(cur_loop < data_loop) begin
-         $display("loop ERROR\n");
-         $stop;
+         $display("loop ERROR: %x,buck: %d, loop: %d\n",data,cur_bucket,cur_loop);
+   //if addr was previously updated by write data|ack op
+         //$stop;
       end
       if(cur_loop==data_loop && cur_bucket<data_bucket) begin
-         $display("bucket ERROR\n");
-         $stop;
+         $display("bucket ERROR: %x, buck: %d, loop: %d\n",data,cur_bucket,cur_loop);
+   //if addr was previously updated by write data|ack op
+         //$stop;
       end
       //synthesis translate_on
       if(cur_loop == data_loop && cur_bucket >= data_bucket)

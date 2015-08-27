@@ -82,6 +82,84 @@ module bloom_filter
 
    // Define the log2 function
    `LOG2_FUNC
+   
+   /* implements persistence in reqs because SRAM is shared
+   with some others modules 
+   
+   -> decides the next states and set the signals */
+   
+	task read_persistence;
+		input			is_ack;
+		input			_delay;
+		output		delay_next;
+		/* reqs */
+		output		_req;
+		/* decides next _state */
+		output [NUM_STATES-1:0]	_state;
+		input	[NUM_STATES-1:0]	_current;
+		input	[NUM_STATES-1:0]	_next;
+		begin
+			$display("Task inputs: %d %d %d %d\n",is_ack,_delay,_current,_next);
+		
+			if(!is_ack && _delay == 0) begin
+				delay_next = 1;
+				_req = 0;
+				_state = _current;
+			end
+			else if(!is_ack && _delay) begin
+				delay_next = 0;  
+				_req = 1;
+				_state = _current;
+			end
+			else if(is_ack) begin
+				_state = _next;
+				delay_next = 0;
+				_req = 0;
+			end
+			/* when is_ack is x. write_persistence dont need that because ack is 
+			initialized when these _state is reached */
+			else begin
+				_state = _current;
+				if(_delay) _req = 1;
+				else _req = 0;
+				delay_next = ~_delay;
+			end
+		end
+	endtask 
+
+   task write_persistence;
+		input							is_ack;
+		input							_delay;
+		output						delay_next;
+		/* reqs */
+		output						_req;
+		/* decides next state */
+		output [NUM_STATES-1:0]	state;
+		input	[NUM_STATES-1:0]	_current;
+		input	[NUM_STATES-1:0]	_next;
+		
+		output						fifo_rd_en;
+		
+		begin
+			if(!is_ack) begin
+				if(delay == 0) begin
+					delay_next = 1;
+				end
+				else begin
+					delay_next = 0;
+					_req = 1;	
+				end
+				state = _current;
+				fifo_rd_en = 0;
+			end
+         else if(is_ack) begin
+   	      state = _next;
+            fifo_rd_en = 1;
+         end
+         else
+            $stop;
+		end	   
+   endtask
 
    /* interface to fifo hash */
    wire                    					in_fifo_hash_empty;
@@ -122,6 +200,9 @@ module bloom_filter
 
    reg [BITS_SHIFT-1:0]                   cur_bucket;
    reg [BLOOM_POS-BITS_SHIFT-1:0]         cur_loop;
+
+   // read_persistence
+   reg                                    delay, delay_next;
 	
 	/* ----------- local assignments -----------*/
 	/* hash FIFO */
@@ -142,6 +223,7 @@ module bloom_filter
    /* updates the data that will be used if hash was calculated
       * over data packet */
    assign updated_data = dado_deslocado+{{(NUM_BITS_BUCKET-1){1'b0}},1'b1,{(SRAM_DATA_WIDTH-NUM_BITS_BUCKET){1'b0}}};
+   //assign updated_data = dado_deslocado+{{(3*NUM_BITS_BUCKET-1){1'b0}},1'b1,{(SRAM_DATA_WIDTH-3*NUM_BITS_BUCKET){1'b0}}};
   
    /* updates the data that will be used if hash was calculated
       * over ack packet */
@@ -152,19 +234,28 @@ module bloom_filter
       end
    endgenerate
 
+   assign updated_ack[BLOOM_POS-1:0] =dado_deslocado[BLOOM_POS-1:0];
+
    /* evaluates buckets-diff by index */
    wire [BITS_SHIFT-1:0]   latencia;
    wire [31:0]             medicao;
    reg [BITS_SHIFT-1:0]    medicao1, medicao1_next;
    reg [BITS_SHIFT-1:0]    medicao2, medicao2_next;
 
-   generate
+   /*generate
    genvar j;
       assign latencia = 0;
       for(j=0;j<NUM_BUCKETS;j=j+1) begin: latencia_mod
          assign latencia = indice[j]?j:0;
       end
-   endgenerate
+   endgenerate*/
+
+  calcula_latencia #(
+     .INDEX_WIDTH    (NUM_BUCKETS),
+     .OUTPUT_WIDTH   (BITS_SHIFT)) latencia_calc
+     (
+      .index      (indice),
+      .latencia   (latencia));
 
    /* if medicao1 differs from medicao2 means false positive */
    assign medicao = medicao1==medicao2?medicao1:0;
@@ -181,7 +272,7 @@ module bloom_filter
          .MAX_DEPTH_BITS(3)) in_fifo_hash 
         (.din        ({is_ack,tuple,index_0,index_1}),// in
          .wr_en      (in_fifo_hash_wr), // Write enable
-         .rd_en      (in_fifo_hash_rd_en),// Read the next word
+         .rd_en      (in_fifo_hash_rd_en),
          .dout       ({in_fifo_hash_dout}),
          .full       (in_fifo_hash_full),
          .nearly_full(),
@@ -244,27 +335,27 @@ module bloom_filter
       .SHIFT_WIDTH (10)
    ) SRAM_shifter (
 
-      .wr_shi_req    (wr_shi_req),
-      .wr_shi_addr   (wr_shi_addr),
-      .wr_shi_data   (wr_shi_data),
-      .wr_shi_ack    (wr_shi_ack),
+      .wr_shi_req       (wr_shi_req),
+      .wr_shi_addr      (wr_shi_addr),
+      .wr_shi_data      (wr_shi_data),
+      .wr_shi_ack       (wr_shi_ack),
 
-      .rd_shi_req    (rd_shi_req),
-      .rd_shi_addr   (rd_shi_addr),
-      .rd_shi_data   (rd_shi_data),
-      .rd_shi_ack    (rd_shi_ack),
-      .rd_shi_vld    (rd_shi_vld),
+      .rd_shi_req       (rd_shi_req),
+      .rd_shi_addr      (rd_shi_addr),
+      .rd_shi_data      (rd_shi_data),
+      .rd_shi_ack       (rd_shi_ack),
+      .rd_shi_vld       (rd_shi_vld),
 
-      .enable        (enable),
+      .enable           (enable),
 
-      .watchdog_signal (watchdog),
+      .watchdog_signal  (watchdog),
 
-      .cur_bucket    (cur_bucket),
-      .cur_loop      (cur_loop),
-      //.last_addr     (last_addr),
+      .cur_bucket       (cur_bucket),
+      .cur_loop         (cur_loop),
+      //.last_addr      (last_addr),
 
-      .reset (reset),
-      .clk (clk));
+      .reset            (reset),
+      .clk              (clk));
 
 	 always @(*) begin
 	 	/* FIFOS */
@@ -284,73 +375,109 @@ module bloom_filter
 	 	
       state_next = state;
 
+      //read_persistence
+      delay_next = delay;
+
 	 	case(state)
 	 		ADDR1: begin
-	 		if(!in_fifo_hash_empty) begin
+	 		if(!in_fifo_hash_empty && enable) begin
             rd_addr_next = low_addr;
             rd_req_next = 1;
             state_next = WAIT_ADDR1;
+
+            // read_persistence
+            delay_next = 0;
 	 		end
 	 		end 
-         WAIT_ADDR1: begin
-            if(rd_ack)
-               state_next = ADDR2;
-            else rd_req_next = 1;
+	      WAIT_ADDR1: begin
+		      $display("rd_ack: %b", rd_ack);			    
+	      // decides the next state and sets the signals
+		      read_persistence(rd_ack,delay,delay_next,rd_req_next,state_next,
+		      					WAIT_ADDR1,ADDR2); 
+		      $display("state_next: %d", state_next);
+		      $display("req_next: %d", rd_req_next);			    
          end
          ADDR2: begin
             rd_addr_next = high_addr;
+            $display("highaddr: %x|%x\n",high_addr,low_addr);
             rd_req_next = 1;
             state_next = WAIT_ADDR2;
+            
+            // read_persistence
+            delay_next = 0;
 	 		end
          WAIT_ADDR2: begin
-            if(rd_ack)
-               state_next = WRITE_ADDR1;
-            else rd_req_next = 1;
+         // decides the next state and sets the signals   
+		      read_persistence(rd_ack,delay,delay_next,rd_req_next,state_next,
+		      					WAIT_ADDR2,WRITE_ADDR1); 
+		      $display("state_next: %d", state_next);
+		      $display("req_next: %d", rd_req_next);			    
          end
          WRITE_ADDR1: begin
             if (!in_fifo_sram_empty) begin
                wr_req_next = 1;
                wr_addr_next = low_addr;
-               if(hash_is_ack)
+               if(hash_is_ack) begin
                   wr_data_next = updated_ack;
-               else
+               end
+               else begin
                   wr_data_next = updated_data;
+               end
                state_next = WAIT_WR_ADDR1;
             end
          end
+        
          WAIT_WR_ADDR1: begin
-            if(wr_ack) begin
-               state_next = WRITE_ADDR2;
-               medicao1_next = latencia;
-               in_fifo_sram_rd_en = 1;
-            end else 
-               wr_req_next = 1;
+         
+         	write_persistence(wr_ack,delay,delay_next,wr_req_next,state_next,
+         					WAIT_WR_ADDR1,WRITE_ADDR2,in_fifo_sram_rd_en);
+         	
+         	if(wr_ack) begin
+	   	      medicao1_next = latencia;
+   	      end				
+         					
          end
+         
          WRITE_ADDR2: begin
             wr_req_next = 1;
-            wr_addr_next = low_addr;
-            if(hash_is_ack)
+            wr_addr_next = high_addr;
+            if(hash_is_ack) begin
                wr_data_next = updated_ack;
-            else
+            end
+            else begin
                wr_data_next = updated_data;
+            end
             state_next = WAIT_WR_ADDR2;
          end
          WAIT_WR_ADDR2: begin
-            if(wr_ack) begin
-               state_next = PAYLOAD1; //ADDR1;
-               medicao2_next = latencia;
-               in_fifo_sram_rd_en = 1;
-            end else 
-               wr_req_next = 1;
+            
+         	write_persistence(wr_ack,delay,delay_next,wr_req_next,state_next,
+         					WAIT_WR_ADDR2,PAYLOAD1,in_fifo_sram_rd_en);
+         					
+         	if(wr_ack) begin
+	   	      medicao2_next = latencia;
+
+               // we don't record in fifo when pkt is not ack
+               if(!hash_is_ack) begin
+                  state_next = ADDR1;
+                  /* catch next tuple */
+                  in_fifo_hash_rd_en = 1;
+               end
+   	      end
+
+
          end
          PAYLOAD1: begin
-            /* write in fifo the word with results */
-            if(!in_fifo_med_full) begin //if fifo full, discard
+         /* write in fifo the word with results */
+         /* if fifo is full, discard */
+            if(!in_fifo_med_full) begin 
                in_fifo_med_din = tuple[95:32]; //ip1 e ip2
                in_fifo_med_wr =1;
-               state_next = ADDR1;
-            end else
                state_next = PAYLOAD2;
+            end
+            /*   state_next = ADDR1;
+            end else
+               state_next = PAYLOAD2;*/
          end
          PAYLOAD2: begin
             in_fifo_med_din = {tuple[31:0],medicao};
@@ -375,6 +502,9 @@ module bloom_filter
          {medicao1,medicao2} <=0;
          cur_bucket <= 'h0;
          cur_loop <='h0;
+         
+         // persistence
+         delay <=0;
 	 	end else begin
          if(watchdog) begin
             /* updates bloom filter counter */
@@ -383,20 +513,23 @@ module bloom_filter
                cur_loop <= cur_loop + 'h1;
          end 
          //else begin
-            state <= state_next;
-            wr_data <= wr_data_next;
-            {rd_req,wr_req} <= {rd_req_next,wr_req_next};
-            {rd_addr,wr_addr} <= {rd_addr_next,wr_addr_next};
-            medicao1 <=medicao1_next;
-            medicao2 <=medicao2_next;
+         state <= state_next;
+         wr_data <= wr_data_next;
+         {rd_req,wr_req} <= {rd_req_next,wr_req_next};
+         rd_addr <= {{9{1'b0}},rd_addr_next[9:0]};
+         wr_addr <= {{9{1'b0}},wr_addr_next[9:0]};
+         medicao1 <=medicao1_next;
+         medicao2 <=medicao2_next;
          //end
+         // persistence
+         delay <=delay_next;
       end	
 	 end //always @(posedge clk)
 
    /* DEBUG */
    //synthesis translate_off
    always @(posedge clk) begin
-      if(state_next == WAIT_ADDR1)
+      /*if(state_next == WAIT_ADDR1)
          $display("WAIT_ADDR1\n");
       if(state_next == WAIT_ADDR2)
          $display("WAIT_ADDR2\n");
@@ -405,9 +538,31 @@ module bloom_filter
       if(in_fifo_hash_full) begin
          $display("FIFO HASH FULL\n");
          $stop;
-      end
-      if(state_next == ADDR1 && !in_fifo_hash_empty) begin
+      end*/
+      if(state_next == ADDR1 && !in_fifo_hash_empty && enable) begin
          $display("HASH FIFO: %x %x\n",addr1,addr2);
+      end
+      if(rd_req)
+         $display("readding: %x\n",rd_addr);
+      if(rd_vld)
+         $display("readdata: %x %x\n",rd_vld,rd_data);
+      if(in_wr) 
+         $display("idx0: %x, idx1: %x,tuple: %x\n",index_0,index_1,tuple); 
+      if(in_fifo_med_wr)
+         $display("in_fifo_med_din: %x\n",in_fifo_med_din);
+      /*if(state_next == WAIT_ADDR1 && rd_req_next)
+            $display("lowaddr: %x\n",low_addr[9:0]);
+      if(state_next == WAIT_ADDR2 && rd_req_next)
+            $display("highaddr: %x\n",high_addr[9:0]);*/
+      if(state_next == WRITE_ADDR2 && hash_is_ack)
+         $display("medicao1: %x, indice: %b, deslocado: %x: %x %x\n",latencia,indice,dado_deslocado,in_fifo_sram_dout,wr_addr);
+      if(state_next == PAYLOAD1 && hash_is_ack)
+         $display("medicao2: %x, indice: %b, deslocado: %x: %x %x\n",latencia,indice,dado_deslocado,in_fifo_sram_dout,wr_addr);
+      if((state_next == WAIT_WR_ADDR1 || state_next == WAIT_WR_ADDR2) && wr_req_next) begin
+         if(hash_is_ack) 
+            $display("hashisack:%d,%x|%x\n",hash_is_ack,updated_ack,wr_addr_next);
+         else
+            $display("hashisdata:%d,%x|%x\n",hash_is_ack,updated_data,wr_addr_next);
       end
    end
    //synthesis translate_on

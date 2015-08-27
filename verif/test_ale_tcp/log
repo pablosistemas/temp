@@ -1,0 +1,1403 @@
+
+NetFPGA environment:
+  Root dir:       /root/netfpga
+  Project name:   teste
+  Project dir:    /root/netfpga/projects/teste
+  Work dir:       /tmp/root
+
+=== Work directory is /tmp/root/verif/teste.
+=== Calling make to build simulation binary with
+cd /tmp/root/verif/teste; rm -rf my_sim; make -f Makefile DUMP_CTRL= SIM_OPT=  isim_top
+make -C /root/netfpga/projects/teste/synth registers
+make[1]: Entering directory `/root/netfpga/projects/teste/synth'
++++testStarted:build.registers.teste
+
+NetFPGA environment:
+  Root dir:       /root/netfpga
+  Project name:   teste
+  Project dir:    /root/netfpga/projects/teste
+  Work dir:       /tmp/root
+
+Processing /root/netfpga/lib/verilog/core/common/xml/global.xml...
+Processing /root/netfpga/lib/verilog/core/common/xml/nf_defines.xml...
+Processing /root/netfpga/projects/teste/include/project.xml...
+
+Project: 'FIREWALL' (teste)
+Description: Firewall to parser packets based in TCP port using register interface
+Version: 1.1.2
+Device ID: 1
+
+Processing /root/netfpga/lib/verilog/core/io_queues/cpu_dma_queue/xml/cpu_dma_queue.xml...
+Processing /root/netfpga/lib/verilog/core/io_queues/ethernet_queue/xml/ethernet_mac.xml...
+WARNING: No module specific XML found for module 'contrib/ucsd/gig_eth_mac'
+Processing /root/netfpga/lib/verilog/core/input_arbiter/rr_input_arbiter/xml/rr_input_arbiter.xml...
+WARNING: No module specific XML found for module 'core/nf2/generic_top'
+WARNING: No module specific XML found for module 'core/nf2/reference_core'
+WARNING: No module specific XML found for module 'core/user_data_path/reference_user_data_path'
+WARNING: No module specific XML found for module 'core/user_data_path/udp_reg_master'
+WARNING: No module specific XML found for module 'core/output_port_lookup/nic'
+Processing /root/netfpga/lib/verilog/core/output_queues/bram_output_queues/xml/bram_output_queues.xml...
+WARNING: No module specific XML found for module 'core/sram_arbiter/sram_weighted_rr'
+Processing /root/netfpga/lib/verilog/core/io/mdio/xml/mdio.xml...
+WARNING: No module specific XML found for module 'core/cpci_bus'
+Processing /root/netfpga/lib/verilog/core/dma/xml/dma.xml...
+WARNING: No module specific XML found for module 'core/io_queues/add_rm_hdr'
+Processing /root/netfpga/lib/verilog/core/utils/xml/device_id_reg.xml...
+WARNING: No module specific XML found for module 'core/utils/generic_regs'
+Processing /root/netfpga/lib/verilog/core/common/xml/global.xml...
+WARNING: Unexpected root element 'nf:global' in '/root/netfpga/lib/verilog/core/common/xml/global.xml'
+Processing /root/netfpga/lib/verilog/core/common/xml/nf_defines.xml...
+WARNING: Unexpected root element 'nf:global' in '/root/netfpga/lib/verilog/core/common/xml/nf_defines.xml'
+Processing /root/netfpga/projects/teste/include/firewall.xml...
+Processed registers.
++++testFinished:build.registers.teste
+make[1]: Leaving directory `/root/netfpga/projects/teste/synth'
+make -C /root/netfpga/projects/cpci/synth registers
+make[1]: Entering directory `/root/netfpga/projects/cpci/synth'
++++testStarted:build.registers.cpci
+
+NetFPGA environment:
+  Root dir:       /root/netfpga
+  Project name:   cpci
+  Project dir:    /root/netfpga/projects/cpci
+  Work dir:       /tmp/root
+
+Processing /root/netfpga/lib/verilog/core/common/xml/global.xml...
+Processing /root/netfpga/lib/verilog/core/common/xml/nf_defines.xml...
+Processing /root/netfpga/projects/cpci/include/project.xml...
+
+Project: 'CPCI' (cpci)
+Description: NetFPGA PCI interface
+Version: 4.1.0
+Device ID: 0
+
+Processing /root/netfpga/projects/cpci/include/cpci_regs.xml...
+Processed registers.
++++testFinished:build.registers.cpci
+make[1]: Leaving directory `/root/netfpga/projects/cpci/synth'
+make -C /root/netfpga/projects/teste/synth cores
+make[1]: Entering directory `/root/netfpga/projects/teste/synth'
+Made cores.
+make[1]: Leaving directory `/root/netfpga/projects/teste/synth'
+make -C /root/netfpga/projects/cpci/synth cores
+make[1]: Entering directory `/root/netfpga/projects/cpci/synth'
+Made cores.
+make[1]: Leaving directory `/root/netfpga/projects/cpci/synth'
+=== Simulation compiled.
+=== Will run the following tests:
+test_sram_tcp 
+
+
+=== Setting up simulation in /tmp/root/verif/teste/test_sram_tcp...
+=== Copying files to test directory /tmp/root/verif/teste/test_sram_tcp.
+=== Running test /tmp/root/verif/teste/test_sram_tcp/test_sram_tcp ...
+
+NetFPGA environment:
+  Root dir:       /root/netfpga
+  Project name:   teste
+  Project dir:    /root/netfpga/projects/teste
+  Work dir:       /tmp/root
+
+--- Reading configuration file
+Seen: test_desc => NF 2.1 reference router
+Seen: finish => 550000
+--- Running test.
+NF 2.1 reference router
+--- Generating packets...
+Can't locate package NF::Pdu for @NF::TCP_hdr::ISA at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 31.
+Can't locate package NF::Pdu for @NF::TCP_hdr::ISA at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 31.
+Can't locate package NF::Pdu for @NF::TCP_hdr::ISA at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 31.
+Use of uninitialized value $bytes[14] in left bitshift (<<) at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2398.
+Use of uninitialized value $bytes[15] in bitwise or (|) at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2398.
+Use of uninitialized value $bytes[16] in left bitshift (<<) at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2398.
+Use of uninitialized value $bytes[17] in bitwise or (|) at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2398.
+Use of uninitialized value $bytes[18] in left bitshift (<<) at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2398.
+Use of uninitialized value $bytes[19] in bitwise or (|) at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2398.
+Use of uninitialized value $bytes[16] in left bitshift (<<) at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2398.
+Use of uninitialized value $bytes[17] in bitwise or (|) at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2398.
+Use of uninitialized value $bytes[18] in left bitshift (<<) at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2398.
+Use of uninitialized value $bytes[19] in bitwise or (|) at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2398.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+Use of uninitialized value $_ in sprintf at /root/netfpga/lib/Perl5//Test/PacketLib.pm line 2203.
+
+NetFPGA environment:
+  Root dir:       /root/netfpga
+  Project name:   teste
+  Project dir:    /root/netfpga/projects/teste
+  Work dir:       /tmp/root
+
+tamanhodopacote: 54
+--- make_pkts.pl: Generated all configuration packets.
+--- make_pkts.pl: Last packet enters system at approx 13 microseconds.
+--- Running the simulation (takes a while). Logging to my_sim.log
+--- Running nf2_top_isim
+Release 10.1.03 - ISE Simulator(ISim) Engine K.39 (lin)
+Copyright (c) 1995-2008 Xilinx, Inc.  All rights reserved.
+This is a Full version of ISE Simulator(ISim).
+Simulator is doing circuit initialization process.
+Warning in testbench.u_board.cpci_top.cnet_reg_iface.cpci_pci2net_fifo.inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.cpci_top.cnet_dma_bus_master.pci2net_dma_fifo.inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.cpci_top.cnet_dma_bus_master.dma_rx_fifo.inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\mac_groups[0].nf2_mac_grp .rx_queue.\rx_fifo_64.gmac_rx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\mac_groups[0].nf2_mac_grp .rx_queue.pkt_chk_fifo.inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\mac_groups[0].nf2_mac_grp .tx_queue.\tx_fifo_64.gmac_tx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\mac_groups[1].nf2_mac_grp .rx_queue.\rx_fifo_64.gmac_rx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\mac_groups[1].nf2_mac_grp .rx_queue.pkt_chk_fifo.inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\mac_groups[1].nf2_mac_grp .tx_queue.\tx_fifo_64.gmac_tx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\mac_groups[2].nf2_mac_grp .rx_queue.\rx_fifo_64.gmac_rx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\mac_groups[2].nf2_mac_grp .rx_queue.pkt_chk_fifo.inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\mac_groups[2].nf2_mac_grp .tx_queue.\tx_fifo_64.gmac_tx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\mac_groups[3].nf2_mac_grp .rx_queue.\rx_fifo_64.gmac_rx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\mac_groups[3].nf2_mac_grp .rx_queue.pkt_chk_fifo.inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\mac_groups[3].nf2_mac_grp .tx_queue.\tx_fifo_64.gmac_tx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\cpu_queues[0].cpu_dma_queue_i .cpu_dma_rx_queue.\cpu_fifos64.rx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\cpu_queues[0].cpu_dma_queue_i .cpu_dma_tx_queue.\cpu_fifos64.tx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\cpu_queues[1].cpu_dma_queue_i .cpu_dma_rx_queue.\cpu_fifos64.rx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\cpu_queues[1].cpu_dma_queue_i .cpu_dma_tx_queue.\cpu_fifos64.tx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\cpu_queues[2].cpu_dma_queue_i .cpu_dma_rx_queue.\cpu_fifos64.rx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\cpu_queues[2].cpu_dma_queue_i .cpu_dma_tx_queue.\cpu_fifos64.tx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\cpu_queues[3].cpu_dma_queue_i .cpu_dma_rx_queue.\cpu_fifos64.rx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.\cpu_queues[3].cpu_dma_queue_i .cpu_dma_tx_queue.\cpu_fifos64.tx_fifo .inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.cpci_bus.pci2net_fifo.inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+Warning in testbench.u_board.nf2_top.nf2_core.cpci_bus.net2pci_fifo.inst at time                    0: When using an asynchronous configuration for the FIFO Generator, the behavioral model is not cycle-accurate. You may wish to choose the structural simulation model instead of the behavioral model. This will ensure accurate behavior and latencies during simulation. You can enable this from CORE Generator by selecting Project -> Project Options -> Generation tab -> Structural Simulation. See the FIFO Generator User Guide for more information.
+NOTICE      : 010 : Byte write  corruption
+NOTICE      : 011 : Byte enable corruption
+NOTICE      : 012 : CE1B       corruption
+NOTICE      : 013 : CE2       corruption
+NOTICE      : 014 : CE3B      corruption
+NOTICE      : 015 : CENB      corruption
+NOTICE      : 016 : ADV_LB   corruption
+NOTICE      : 020 : Data bus    corruption
+NOTICE      : 010 : Byte write  corruption
+NOTICE      : 011 : Byte enable corruption
+NOTICE      : 012 : CE1B       corruption
+NOTICE      : 013 : CE2       corruption
+NOTICE      : 014 : CE3B      corruption
+NOTICE      : 015 : CENB      corruption
+NOTICE      : 016 : ADV_LB   corruption
+NOTICE      : 020 : Data bus    corruption
+Finished circuit initialization process.
+Read Configuration file config.sim
+    Finish time is 550000.00ns.
+    2.00ns testbench.net1 Info: Reading ingress packet data from file packet_data/ingress_port_1
+    2.00ns testbench.net2 Info: Reading ingress packet data from file packet_data/ingress_port_2
+    2.00ns testbench.net3 Info: Reading ingress packet data from file packet_data/ingress_port_3
+    2.00ns testbench.net4 Info: Reading ingress packet data from file packet_data/ingress_port_4
+    3.00ns testbench.net1 Info: There will be 1 ingress packets.
+    3.00ns testbench.net1 Info: Waiting for initial configuration to complete.
+    3.00ns testbench.net2 Info: There will be 0 ingress packets.
+    3.00ns testbench.net2 Info: Waiting for initial configuration to complete.
+    3.00ns testbench.net3 Info: There will be 0 ingress packets.
+    3.00ns testbench.net3 Info: Waiting for initial configuration to complete.
+    3.00ns testbench.net4 Info: There will be 0 ingress packets.
+    3.00ns testbench.net4 Info: Waiting for initial configuration to complete.
+ 
+                 300   System Reset Complete...
+ 
+                 465   Operating System Configuring Device...
+ 
+                 465   Searching for device.
+                 645   Host read  0x00010000 with cmd 0xa:  Disconnect with Data, 0x0001feed.
+                 705   NetFPGA-1G Device Found.
+                 705   BAR0:
+                 885   Host read  0x00010010 with cmd 0xa:  Disconnect with Data, 0x00000000.
+                 945   BAR0 of expected type exists.
+                 945   Checking size of BAR0.
+                1335   Host read  0x00010010 with cmd 0xa:  Disconnect with Data, 0xf8000000.
+                1395   Device requests 0x08000000 bytes.
+                1395   Locating device at 0x00000000.
+                1605   BAR1:
+                1785   Host read  0x00010014 with cmd 0xa:  Disconnect with Data, 0x00000000.
+                1845   BAR1 of expected type exists.
+                1845   Checking size of BAR1.
+                2235   Host read  0x00010014 with cmd 0xa:  Disconnect with Data, 0x00000000.
+                2295   Device requests 0x00000000 bytes.
+                2295   BAR2:
+                2475   Host read  0x00010018 with cmd 0xa:  Disconnect with Data, 0x00000000.
+                2535   BAR2 of expected type exists.
+                2535   Checking size of BAR2.
+                2925   Host read  0x00010018 with cmd 0xa:  Disconnect with Data, 0x00000000.
+                2985   Device requests 0x00000000 bytes.
+                2985   Setting Latency Timer to 0xff.
+                3195   Enabling Mem Space and Bus Master.
+                3585   Host read  0x00010004 with cmd 0xa:  Disconnect with Data, 0x02000146.
+                3645   Operating System Configuring Done
+ 
+ 
+ 3645.00ns testbench.host32: Info: Waiting until time  3900.00ns to execute next PCI access.
+ 3645.00ns System appears to be up.
+ 3645.00ns testbench.net1 Info: Forking ingess, egress and finish jobs.
+ 3645.00ns testbench.net2 Info: Forking ingess, egress and finish jobs.
+ 3645.00ns testbench.net3 Info: Forking ingess, egress and finish jobs.
+ 3645.00ns testbench.net4 Info: Forking ingess, egress and finish jobs.
+ 3645.00ns testbench.net1 Info: Waiting until time 12500.00ns to send packet (length 64)
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+ 3915.00ns testbench.host32: Info: Starting PCI Write data 0x00000000 to address 0x00000008
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+ 4155.00ns testbench.host32: Info: Waiting until time  4160.00ns to execute next PCI access.
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+ 4185.00ns testbench.host32: Info: Starting PCI Write data 0x00000000 to address 0x00000040
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+ 4425.00ns testbench.host32: Info: Starting PCI Write data 0x0016029b to address 0x01000000
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+ 4665.00ns testbench.host32: Info: Waiting until time  4680.00ns to execute next PCI access.
+ 4665.00ns testbench.host32: Info: Interrupt signaled
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+                4845   Host read  0x00000044 with cmd 0x6:  Disconnect with Data, 0x00000200.
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+                4905   CPCI Interrupt:  DMA queue status change
+ 4907.00ns testbench.host32: DMA queue status change
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+                5085   Host read  0x00000158 with cmd 0x6:  Disconnect with Data, 0x0000000f.
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+ 5176.00ns testbench.host32: Info: Starting PCI Write data 0x04ba0050 to address 0x01000004
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+ 5415.00ns testbench.host32: Info: Starting PCI Read of address 0x01000000 expect result 0x0016029b
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+                5625   Host read  0x01000000 with cmd 0x6:  Retry, no data.
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+                5895   Host read  0x01000000 with cmd 0x6:  Retry, no data.
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+                6165   Host read  0x01000000 with cmd 0x6:  Retry, no data.
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+                6435   Host read  0x01000000 with cmd 0x6:  Retry, no data.
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+                6705   Host read  0x01000000 with cmd 0x6:  Retry, no data.
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+                6975   Host read  0x01000000 with cmd 0x6:  Retry, no data.
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+                7245   Host read  0x01000000 with cmd 0x6:  Retry, no data.
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+                7515   Host read  0x01000000 with cmd 0x6:  Retry, no data.
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+                7785   Host read  0x01000000 with cmd 0x6:  Retry, no data.
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+resetando memoria
+
+memoria resetada
+
+                8055   Host read  0x01000000 with cmd 0x6:  Retry, no data.
+                8325   Host read  0x01000000 with cmd 0x6:  Disconnect with Data, 0x0016029b.
+ 8385.00ns testbench.host32: Good: PCI read of addr 0x01000000 returned data 0x0016029b as expected.
+ 8385.00ns testbench.host32: Info: Starting PCI Read of address 0x01000004 expect result 0x04ba0050
+                8595   Host read  0x01000004 with cmd 0x6:  Retry, no data.
+                8865   Host read  0x01000004 with cmd 0x6:  Retry, no data.
+                9135   Host read  0x01000004 with cmd 0x6:  Disconnect with Data, 0x04ba0050.
+ 9195.00ns testbench.host32: Good: PCI read of addr 0x01000004 returned data 0x04ba0050 as expected.
+12500.00ns testbench.net1 Sending next ingress packet (len 64) to NF2.
+Pacote TCP
+
+Pacote TCP
+
+13635.00ns testbench.host32: Info: Interrupt signaled
+Timecheck: 13645.00ns
+               13815   Host read  0x00000044 with cmd 0x6:  Disconnect with Data, 0x00000300.
+               13875   CPCI Interrupt:  DMA queue status change  Pkt available
+13877.00ns testbench.host32: DMA queue status change
+               14055   Host read  0x00000158 with cmd 0x6:  Disconnect with Data, 0x0001000f.
+14115.00ns testbench.host32: Packet available. Starting DMA ingress transfer
+               14295   Host read  0x00000040 with cmd 0x6:  Disconnect with Data, 0x00000000.
+15825.00ns testbench.host32: Info: Interrupt signaled
+               16575   Host read  0x00000044 with cmd 0x6:  Disconnect with Data, 0x80000200.
+               16635   CPCI Interrupt:  DMA ingress xfer complete  DMA queue status change
+16637.00ns testbench.host32: DMA queue status change
+               16815   Host read  0x00000158 with cmd 0x6:  Disconnect with Data, 0x0000000f.
+               17055   Host read  0x00000148 with cmd 0x6:  Disconnect with Data, 0x00000040.
+               17295   Host read  0x00000150 with cmd 0x6:  Disconnect with Data, 0x00000000.
+17355.00ns testbench.host32: Info: DMA ingress transfer complete. Size:         64   Source:  0
+               17535   Host read  0x00000040 with cmd 0x6:  Disconnect with Data, 0x00000100.
+Timecheck: 23645.00ns
+Timecheck: 33645.00ns
+Timecheck: 43645.00ns
+Timecheck: 53645.00ns
+Timecheck: 63645.00ns
+Timecheck: 73645.00ns
+Timecheck: 83645.00ns
+Timecheck: 93645.00ns
+Timecheck: 103645.00ns
+Timecheck: 113645.00ns
+Timecheck: 123645.00ns
+Timecheck: 133645.00ns
+Timecheck: 143645.00ns
+Timecheck: 153645.00ns
+Timecheck: 163645.00ns
+Timecheck: 173645.00ns
+Timecheck: 183645.00ns
+Timecheck: 193645.00ns
+Timecheck: 203645.00ns
+Timecheck: 213645.00ns
+Timecheck: 223645.00ns
+Timecheck: 233645.00ns
+Timecheck: 243645.00ns
+Timecheck: 253645.00ns
+Timecheck: 263645.00ns
+Timecheck: 273645.00ns
+Timecheck: 283645.00ns
+Timecheck: 293645.00ns
+Timecheck: 303645.00ns
+Timecheck: 313645.00ns
+Timecheck: 323645.00ns
+Timecheck: 333645.00ns
+Timecheck: 343645.00ns
+Timecheck: 353645.00ns
+Timecheck: 363645.00ns
+Timecheck: 373645.00ns
+Timecheck: 383645.00ns
+Timecheck: 393645.00ns
+Timecheck: 403645.00ns
+Timecheck: 413645.00ns
+Timecheck: 423645.00ns
+Timecheck: 433645.00ns
+Timecheck: 443645.00ns
+Timecheck: 453645.00ns
+Timecheck: 463645.00ns
+Timecheck: 473645.00ns
+Timecheck: 483645.00ns
+Timecheck: 493645.00ns
+Timecheck: 503645.00ns
+Timecheck: 513645.00ns
+Timecheck: 523645.00ns
+Timecheck: 533645.00ns
+Timecheck: 543645.00ns
+              550100 Simulation has reached finish time - ending.
+Stopped at time : 550.100 us : File "/root/netfpga/lib/verilog/core/legacy_testbench/target32.v" Line 603 
+--- Simulation is complete. Validating the output.
+	Comparing simulation output for port 1 ...
+	Port 1 matches [0 packets]
+	Comparing simulation output for port 2 ...
+	Port 2 matches [0 packets]
+	Comparing simulation output for port 3 ...
+	Port 3 matches [0 packets]
+	Comparing simulation output for port 4 ...
+	Port 4 matches [0 packets]
+	Comparing simulation output for DMA queue 1 ...
+	Error: Port dma packet 1 : not Matched.
+	DMA queue 1 saw 1 errors.
+
+	Comparing simulation output for DMA queue 2 ...
+	DMA queue 2 matches [0 packets]
+	Comparing simulation output for DMA queue 3 ...
+	DMA queue 3 matches [0 packets]
+	Comparing simulation output for DMA queue 4 ...
+	DMA queue 4 matches [0 packets]
+--- Test failed (test_sram_tcp) - expected and seen data differs.
+Error: test test_sram_tcp failed!
+------------SUMMARY---------------
+PASSING TESTS: 
+		None
+FAILING TESTS: 
+		test_sram_tcp
+		None
+TOTAL: 1   PASS: 0   FAIL: 1   GUI: 0

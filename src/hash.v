@@ -145,7 +145,7 @@ module hash
       end
    endgenerate
 
-   always @(posedge clk) begin
+   /*always @(posedge clk) begin
       if(reset) begin
 	 		hash_0        <= 0;
 	 		hash_1        <= 0;
@@ -153,5 +153,10 @@ module hash
 	 		hash_0        <= crc_func_0(data_rev, 256'h0);
 	 		hash_1        <= crc_func_1(data_rev, 256'h0);
       end // else: !if(reset)
-   end
+   end*/
+  always @(*) begin
+      hash_0        <= crc_func_0(data_rev, 256'h0);
+      hash_1        <= crc_func_1(data_rev, 256'h0);
+  end
+
 endmodule // hash

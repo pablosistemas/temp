@@ -91,6 +91,11 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
 	 // synthesis translate_on
          sram_reg_ack         <= 0;
          {rd_0_vld,rd_1_vld}    <= 2'b0;
+
+         // persistence
+         {rd_0_vld_early1,rd_1_vld_early1} <=2'b0;
+         {rd_0_vld_early2,rd_1_vld_early2} <=2'b0;
+         {rd_0_vld_early3,rd_1_vld_early3} <=2'b0;
       end
       else begin
          if(do_reset) begin
@@ -106,8 +111,17 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
                sram_addr               <= sram_addr_next;
                sram_addr_next          <= sram_addr_next+1'b1;
                {sram_we, sram_bw}     <= 9'h0;
-               sram_wr_data_early2    <= {3'b0,sram_addr_next,{(SRAM_DATA_WIDTH-16){1'b0}}}; //0;
+
+               sram_wr_data_early2 <=0;
+
+               //synthesis translate_off
+               //sram_wr_data_early2    <= {3'b0,sram_addr_next,{(SRAM_DATA_WIDTH-16){1'b0}}}; 
+               // synthesis translate_on
                sram_tri_en_early2     <= 1;
+               
+               // persistence
+               {rd_0_ack,rd_1_ack,wr_0_ack,wr_1_ack} <= 4'b0;
+
             end // else: !if(sram_addr == {SRAM_ADDR_WIDTH{1'b1}})
          end // if (do_reset)
 
@@ -135,6 +149,7 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
                sram_reg_ack_early3 <= sram_reg_req;
             end
             else if(wr_0_req) begin
+               $display("wr0req\n");
                sram_addr <= wr_0_addr;
                sram_wr_data_early2 <= wr_0_data;
                sram_tri_en_early2 <= wr_0_req;
@@ -143,6 +158,7 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
                wr_0_ack <= 1;
             end
             else if(rd_0_req) begin
+               $display("rd0req\n");
                sram_bw <= 8'hff;
                sram_we <= 1'b1;
                sram_addr <= rd_0_addr;
@@ -151,13 +167,14 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
                rd_0_ack <= rd_0_req;
             end
             else if(wr_1_req) begin
+               $display("wr1req\n");
                sram_addr <= wr_1_addr;
                sram_wr_data_early2 <= wr_1_data;
                sram_tri_en_early2 <= wr_1_req;
                sram_we <= 1'b0;
                sram_bw <= 8'h00;
                wr_1_ack <= 1;
-               rd_1_vld_early3 <= 0;
+               //rd_1_vld_early3 <= 0;
             end
             else if(rd_1_req) begin
                sram_bw <= 8'hff;
