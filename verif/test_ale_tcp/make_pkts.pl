@@ -75,7 +75,8 @@ for(my $i = 0; $i < $num_pkts ; $i++){
       $SRC_IP,
       $DST_IP,
       6000+$i,
-      6000+$i+1      
+      6000+$i+1,
+      0x02 # SYN flag     
    ];
 
    $pkt = SimLib::make_IP_TCP_pkt(@{$params_ref});
@@ -94,13 +95,13 @@ for(my $i = 0; $i < $num_pkts ; $i++){
       $DST_IP,
       $SRC_IP,
       6000+$i+1,
-      6000+$i      
+      6000+$i,
+      0x10 # ACK flag      
    ];
 
    $pkt = SimLib::make_IP_TCP_pkt(@{$params_ref});
-
    NF::PacketGen::nf_packet_in($queue, $length, 
-      $delay, $batch, $pkt);
+      $delay*10, $batch, $pkt);
    NF::PacketGen::nf_expected_dma_data($queue, 
       $length, $pkt);
 }

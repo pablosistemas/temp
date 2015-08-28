@@ -42,7 +42,8 @@ module atualiza_linha
    assign data_bucket = data[BLOOM_INIT_POS-1:BLOOM_INIT_POS-BITS_SHIFT];
    assign data_bloom = data[DATA_WIDTH-1:BLOOM_INIT_POS];
 
-   always @(data) begin
+   //always @(data) begin
+   always @(*) begin
       //synthesis translate_off
       if(cur_loop < data_loop) begin
          $display("loop ERROR: %x,buck: %d, loop: %d\n",data,cur_bucket,cur_loop);
@@ -60,7 +61,10 @@ module atualiza_linha
       else if(cur_loop > data_loop) begin
          shifts = (cur_loop-1-data_loop)*((NUM_BUCKETS-1)-data_bucket+cur_bucket);
       end
-      $display("SHIFT %x\n",shifts);
+      else begin
+         $display("loop: %x|%x, buck: %x|%x\n",cur_loop,data_loop,cur_bucket,data_bucket);
+      end
+      $display("SHIFT %x %x,%d,%d\n",shifts,data,cur_bucket,cur_loop);
    end
 
    /* output */
