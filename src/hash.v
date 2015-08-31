@@ -10,9 +10,7 @@ module hash
       parameter OUTPUT_WIDTH = 19)
     (input [INPUT_WIDTH-1:0]       data,
      output reg [OUTPUT_WIDTH-1:0] hash_0,
-     output reg [OUTPUT_WIDTH-1:0] hash_1,
-     input                         clk,
-     input                         reset);
+     output reg [OUTPUT_WIDTH-1:0] hash_1);
 
 
 ////////////////////////////////////////////////////////////////////////////////

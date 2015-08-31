@@ -17,7 +17,9 @@ module shift_mark
       parameter SHIFT_WIDTH = SRAM_ADDR_WIDTH,
       parameter NUM_BITS_BUCKET = 4,
       parameter NUM_BITS_RESERVED = 16,
-      parameter NUM_BUCKETS = (SRAM_DATA_WIDTH-NUM_BITS_RESERVED)/NUM_BITS_BUCKET
+      parameter BLOOM_POS =NUM_BITS_RESERVED,
+      parameter NUM_BUCKETS = (SRAM_DATA_WIDTH-NUM_BITS_RESERVED)/NUM_BITS_BUCKET,
+      parameter BITS_SHIFT = log2(NUM_BUCKETS)
    ) (
 
       output reg                          	wr_shi_req,
@@ -31,8 +33,9 @@ module shift_mark
       input                               	rd_shi_ack,
       input                               	rd_shi_vld,
 
+      /* SRAM arbiter enable */
       input                                  enable,
-
+         
       /* watchdog */ 
       input                                  watchdog_signal,
 
@@ -64,14 +67,11 @@ module shift_mark
 
    localparam HASH_FIFO_DATA_WIDTH = 1 + 2*SRAM_ADDR_WIDTH;
    
-   localparam BLOOM_POS =NUM_BITS_RESERVED;
-   localparam BITS_SHIFT = log2(NUM_BUCKETS);
 
    localparam ADDR_BOUND ={{(SRAM_ADDR_WIDTH-SHIFT_WIDTH){1'b0}},{SHIFT_WIDTH{1'b1}}};
 
 
    /* interface to SRAM */
-   reg [SRAM_DATA_WIDTH-1:0]					wr_shi_data_next;
    //reg [SRAM_ADDR_WIDTH-1:0]					wr_shi_addr_next;
 	reg												wr_shi_req_next;
    reg [SRAM_ADDR_WIDTH-1:0]					rd_shi_addr_next;
@@ -88,7 +88,7 @@ module shift_mark
    wire [SRAM_DATA_WIDTH-1:0]             in_fifo_shift_dout;
    wire [SRAM_DATA_WIDTH-1:0]             shift_dout;
 
-   // persistency
+   // persistence
    reg                                    delay, delay_next;
 
    // watchdog
@@ -97,10 +97,10 @@ module shift_mark
    //bucket and loop
    reg [BITS_SHIFT-1:0]                 bucket, bucket_next,
                                           nxt_bucket;
-   reg [BLOOM_POS-BITS_SHIFT-1:0]       loop, loop_next,
-                                          nxt_loop;
-   
-	/* ----------- local assignments -----------*/
+   reg [BLOOM_POS-BITS_SHIFT-1:0]       loop, loop_next,nxt_loop;
+
+
+   /* ----------- local assignments -----------*/
    
    assign in_fifo_shift_wr = rd_shi_vld && !in_fifo_shift_full;
    /* data shifted 
@@ -128,10 +128,14 @@ module shift_mark
    reg                                       next_addr_rd_en;
    reg                                       next_addr_wr;
 
+   wire [SRAM_ADDR_WIDTH-1:0]                next_addr_din;
+
+   assign next_addr_din = rd_shi_addr;
+
    fallthrough_small_fifo_old #(
    		.WIDTH(SRAM_ADDR_WIDTH), 
    		.MAX_DEPTH_BITS(3)) fifo_next_addr_write 
-        (.din ({rd_shi_addr}), // Data in
+        (.din (next_addr_din), // Data in
          .wr_en (next_addr_wr), // Write enable
          .rd_en (next_addr_rd_en), // Read the next word 
          .dout ({next_addr_dout}),
@@ -233,7 +237,7 @@ module shift_mark
       /* watchdog */
       watchdog_fired_next = watchdog_fired;
 
-      //persistency
+      //persistence
       delay_next = delay;
 
       //bucket and loop
@@ -249,14 +253,14 @@ module shift_mark
                rd_shi_req_next = 1;
                state_next = WAIT_READ;
 
-               // persistency
+               // persistence
                delay_next = 0;
             end
          end 
          //else $stop; //remove this line 
          end
          WAIT_READ: begin
-         // persistency   
+         // persistence   
          if(!rd_shi_ack && delay == 0)
             delay_next = 1;
          else if(!rd_shi_ack && delay) begin
@@ -296,12 +300,12 @@ module shift_mark
             wr_data_wr_en = 1;
             //synthesis translate_on
             
-            // persistency
+            // persistence
             delay_next = 0;
          end
          end //SRAM_WRITE
          WAIT_WRITE: begin
-         // persistency   
+         // persistence   
          if(!wr_shi_ack && delay == 0)
             delay_next = 1;
          else if(!wr_shi_ack && delay) begin
@@ -326,7 +330,7 @@ module shift_mark
                bucket_next = nxt_bucket;
                loop_next = nxt_loop;
 
-               rd_shi_addr <= {SRAM_ADDR_WIDTH{1'b0}};
+               rd_shi_addr_next = {SRAM_ADDR_WIDTH{1'b0}};
             end
          end //do nothing
          default: begin
@@ -353,8 +357,9 @@ module shift_mark
          nxt_bucket <= 0;
          nxt_loop <= 0;
 
-         // persistency
+         // persistence
          delay <= 0;
+
 	 	end else begin
          if(watchdog_signal) begin
             //state <= SRAM_READ;
@@ -373,14 +378,14 @@ module shift_mark
             watchdog_fired <= watchdog_fired_next;
          end
          state <= state_next;
-         wr_shi_data <= shift_dout; //wr_shi_data_next;
+         wr_shi_data <= shift_dout; 
          rd_shi_req <= rd_shi_req_next;
          wr_shi_req <= wr_shi_req_next;
          wr_shi_addr <= next_addr_dout; //wr_shi_addr_next;
          reqs <= reqs_next;
             //last_addr <= wr_shi_addr;
             
-         // persistency
+         // persistence
          delay <= delay_next;
 
          //bucket and loop
@@ -388,6 +393,7 @@ module shift_mark
          nxt_loop <= cur_loop;
          bucket <= bucket_next;
          loop <= loop_next;
+
       end	
 	 end //always @(posedge clk)
 
@@ -400,17 +406,17 @@ module shift_mark
       wr_fifo_rd_en <= 0;       
       wr_data_rd_en <= 0;       
        if(rd_shi_req_next)  
-          $display("reading addr: %x\n",rd_shi_addr_next);
+          $display("reading addr: %h\n",rd_shi_addr_next);
        /*if(wr_shi_req_next)
-          $display("updating addr: %x\n",wr_shi_addr_next);*/
+          $display("updating addr: %h\n",wr_shi_addr_next);*/
        if(watchdog_signal)
           $display("WATCHDOG\n");
        if(rd_shi_vld) begin
-         $display("dataread[%x]: %x\n",sram_addr_dout,rd_shi_data);
+         $display("dataread[%h]: %h\n",sram_addr_dout,rd_shi_data);
          sram_fifo_rd_en <= 1;       
        end
        if(wr_shi_ack) begin
-         $display("datawrite[%x]: %x,%d,%d",wr_addr_dout,wr_data_dout,cur_bucket,cur_loop);
+         $display("datawrite[%h]: %h,%d,%d",wr_addr_dout,wr_data_dout,cur_bucket,cur_loop);
          wr_fifo_rd_en <= 1;       
          wr_data_rd_en <= 1;       
       end

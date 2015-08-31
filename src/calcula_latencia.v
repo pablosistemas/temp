@@ -78,7 +78,7 @@ module calcula_latencia
 
       end
       endcase
-		$display("index :%b\n",index);
-		$display("latencia :%x\n",latencia);
+		//$display("index :%b\n",index);
+		//$display("latencia :%h\n",latencia);
 	end
 endmodule // hash

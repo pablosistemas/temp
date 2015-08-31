@@ -15,6 +15,7 @@ module temp
       parameter CTRL_WIDTH = DATA_WIDTH/8,
       parameter SRAM_ADDR_WIDTH = 19,
       parameter HASH_BITS = SRAM_ADDR_WIDTH,
+      parameter TUPLE_SZ =96, //2IP, 2PORT
       parameter UDP_REG_SRC_WIDTH = 2
    )
    (
@@ -73,10 +74,6 @@ module temp
 
    localparam TCP = 'h06;
    
-   localparam IP_SZ = 32;
-   localparam TCP_PORT_SZ = 16;
-   localparam TUPLE_SZ = 2*IP_SZ+2*TCP_PORT_SZ;
-
    localparam ETH_TYPE_IP = 16'h0800;
    localparam IPV4 = 4'h4; 
 
@@ -94,10 +91,10 @@ module temp
    /* hash tuple: wires and regs */
    reg  [TUPLE_SZ-1:0]			               tuple;
    
-   reg[IP_SZ-1:0]       			            srcip_next, srcip;
-   reg[IP_SZ-1:0]			                     dstip_next, dstip;
-   reg[TCP_PORT_SZ-1:0]			               srcport_next, srcport;
-   reg[TCP_PORT_SZ-1:0]	   		            dstport_next, dstport;
+   reg[31:0]       			         srcip_next, srcip;
+   reg[31:0]			               dstip_next, dstip;
+   reg[15:0]			               srcport_next, srcport;
+   reg[15:0]	   		            dstport_next, dstport;
    
    reg                                       pkt_is_ack_next;
    
@@ -157,9 +154,7 @@ module temp
        tuple_hash
          (.data              (tuple),
           .hash_0            (index_0),
-          .hash_1            (index_1),
-          .clk               (clk),
-          .reset             (reset));
+          .hash_1            (index_1));
 
    //------------------------- Logic-------------------------------
    
@@ -258,7 +253,7 @@ module temp
       BLOOM_CTRL: begin
          if (bloom_rdy) begin
             bloom_wr = 1;
-            $display("tupla: %x\n",tuple);
+            $display("tupla: %h\n",tuple);
             state_next = PAYLOAD;
          end
       end
@@ -329,13 +324,11 @@ module temp
       //if(state == PAYLOAD && state_next == WAIT_PACKET) begin
      
       if(bloom_wr) begin
-         $display("tupla: %x\n",tuple);
-         $display("hash0: %x\nhash1: %x\n",index_0,index_1); 
+         $display("tupla: %h\n",tuple);
+         $display("hash0: %h\nhash1: %h\n",index_0,index_1); 
       end
-      //synthesis translate_off
       if(!bloom_rdy)
          $stop;
-      //synthesis translate_on
    end
    //synthesis translate_on
 endmodule

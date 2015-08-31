@@ -37,7 +37,7 @@ module lookup_bucket
    endgenerate
 	
 	/*always @(data,index) begin
-		$display("data :%x\n",data);
+		$display("data :%h\n",data);
 		$display("index :%b\n",index);
 	end*/
 endmodule // hash

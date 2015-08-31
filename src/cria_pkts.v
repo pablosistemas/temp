@@ -302,7 +302,7 @@ module cria_pkts
    always @(*) begin
       if(reg_req_in && tag_hit && addr_good && 
          !reg_rd_wr_L_in)
-            $display("reg_file[%d]: %x\n",addr,reg_data_in);
+            $display("reg_file[%d]: %h\n",addr,reg_data_in);
    end
    // synthesis translate on
 

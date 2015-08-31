@@ -294,13 +294,13 @@ module databus
    always @(posedge clk) begin
       if(out_wr && (state_next==WAIT_PKT||
          state_next==SEND_EVT_HDR) && pld_fifo_nearly_full) begin
-         $display("header_ctrl:%x|header_data:%x\n",out_ctrl,out_data);
+         $display("header_ctrl:%h|header_data:%h\n",out_ctrl,out_data);
       end
       if(state_next==SEND_EVT_PAYLOAD && out_wr) begin
-         $display("payload_ctrl:%x|payload_data:%x|%b\n",out_ctrl,out_data,CTRL_LAST_WORD);
+         $display("payload_ctrl:%h|payload_data:%h|%b\n",out_ctrl,out_data,CTRL_LAST_WORD);
       end
       if(out_wr)
-         $display("Ctrl:%x|Data:%x\n",out_ctrl,out_data);
+         $display("Ctrl:%h|Data:%h\n",out_ctrl,out_data);
    end
    //synthesis translate_on
    
