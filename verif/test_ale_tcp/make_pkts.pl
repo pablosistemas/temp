@@ -57,7 +57,7 @@ $delay = 9000;
 $length = 64;
 $queue = 1;
 
-my $num_pkts = 10;
+my $num_pkts = 25;
 
 for(my $i = 0; $i < $num_pkts ; $i++){
    # cria pacote TCP -> função adicionada na biblioteca

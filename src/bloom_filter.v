@@ -66,8 +66,10 @@ module bloom_filter
    localparam WAIT_WR_ADDR2 =128;
    localparam PAYLOAD1 =256;
    localparam PAYLOAD2 =512;
+   localparam NOP1 =1024;
+   localparam NOP2 =2048;
 	
-	localparam NUM_STATES = 10;
+	localparam NUM_STATES = 12;
 
    localparam TUPLE_WIDTH =96;
 
@@ -209,6 +211,8 @@ module bloom_filter
    // read_persistence
    reg                                    delay, delay_next;
 	
+   reg [SRAM_DATA_WIDTH-1:0]              data_aft_shft;
+
 	/* ----------- local assignments -----------*/
 	/* hash FIFO */
    assign in_rdy = !in_fifo_hash_full;
@@ -235,11 +239,11 @@ module bloom_filter
    generate
       genvar i;
       for(i=0;i < NUM_BUCKETS;i=i+1) begin: updt_bloom_ack
-         assign updated_ack[BLOOM_POS+(i+1)*NUM_BITS_BUCKET-1:BLOOM_POS+i*NUM_BITS_BUCKET] = dado_deslocado[BLOOM_POS+(i+1)*NUM_BITS_BUCKET-1:BLOOM_POS+i*NUM_BITS_BUCKET]-indice[i];
+         assign updated_ack[BLOOM_POS+(i+1)*NUM_BITS_BUCKET-1:BLOOM_POS+i*NUM_BITS_BUCKET] = data_aft_shft[BLOOM_POS+(i+1)*NUM_BITS_BUCKET-1:BLOOM_POS+i*NUM_BITS_BUCKET]-indice[i];
       end
    endgenerate
 
-   assign updated_ack[BLOOM_POS-1:0] =dado_deslocado[BLOOM_POS-1:0];
+   assign updated_ack[BLOOM_POS-1:0] =data_aft_shft[BLOOM_POS-1:0];
 
    /* evaluates buckets-diff by index */
    wire [BITS_SHIFT-1:0]   latencia;
@@ -254,16 +258,6 @@ module bloom_filter
          assign latencia = indice[j]?j:0;
       end
    endgenerate*/
-
-  calcula_latencia #(
-     .INDEX_WIDTH    (NUM_BUCKETS),
-     .BITS_SHIFT     (BITS_SHIFT)) latencia_calc
-     (
-      .index      (indice),
-      .latencia   (latencia));
-
-   /* if medicao1 differs from medicao2 means false positive */
-   assign medicao = medicao1==medicao2?medicao1:0;
 
 /* --------------instances of external modules-------------- */
    /* fifo holds reqs and addr from write in BF */
@@ -296,6 +290,7 @@ module bloom_filter
          .clk        (clk));
 
    /* look up the most recently updated bucket */   
+
    lookup_bucket 
      #(
       .INPUT_WIDTH(SRAM_DATA_WIDTH),	
@@ -303,7 +298,7 @@ module bloom_filter
       .BUCKET_SZ(NUM_BITS_BUCKET),
       .NUM_BUCKETS(NUM_BUCKETS)      
      ) busca_bucket (
-   		.data	(dado_deslocado),
+   		.data	(data_aft_shft), //dado_deslocado),
    		.index (indice));
   
       /* updates data that came from SRAM */
@@ -319,7 +314,18 @@ module bloom_filter
          .cur_loop (_loop));
          //.cur_bucket (cur_bucket), 
          //.cur_loop (cur_loop));
- 
+       
+   calcula_latencia #(
+     .INDEX_WIDTH    (NUM_BUCKETS),
+     .BITS_SHIFT     (BITS_SHIFT)) latencia_calc
+     (
+      .index      (indice),
+      .latencia   (latencia));
+
+   /* if medicao1 is diferent from medicao2 means false positive */
+   assign medicao = medicao1==medicao2?medicao1:0;
+
+
    /* fires an updating signal when reached time to shift 
     * the current bucket */   	 
    watchdog
@@ -421,9 +427,13 @@ module bloom_filter
          WAIT_ADDR2: begin
          // decides the next state and sets the signals   
 		      read_persistence(rd_ack,delay,delay_next,rd_req_next,state_next,
-		      					WAIT_ADDR2,WRITE_ADDR1); 
+		      					WAIT_ADDR2,NOP1); //WRITE_ADDR1); 
 		      $display("state_next: %d", state_next);
 		      $display("req_next: %d", rd_req_next);			    
+         end
+         // this state intended to wait the comb circ 
+         NOP1: begin
+            state_next = WRITE_ADDR1;
          end
          WRITE_ADDR1: begin
             if (!in_fifo_sram_empty) begin
@@ -442,14 +452,17 @@ module bloom_filter
          WAIT_WR_ADDR1: begin
          
          	write_persistence(wr_ack,delay,delay_next,wr_req_next,state_next,
-         					WAIT_WR_ADDR1,WRITE_ADDR2,in_fifo_sram_rd_en);
+         					WAIT_WR_ADDR1,/*WRITE_ADDR2*/NOP2,in_fifo_sram_rd_en);
          	
          	if(wr_ack) begin
 	   	      medicao1_next = latencia;
    	      end				
          					
          end
-         
+         // this state intended to wait the comb circ 
+         NOP2: begin
+            state_next = WRITE_ADDR2;
+         end
          WRITE_ADDR2: begin
             wr_req_next = 1;
             wr_addr_next = high_addr;
@@ -521,6 +534,9 @@ module bloom_filter
 
          // persistence
          delay <=0;
+
+         data_aft_shft <= {SRAM_DATA_WIDTH{1'b0}};
+
 	 	end else begin
          if(watchdog) begin
             $display("bloom_watchdog\n");
@@ -551,6 +567,8 @@ module bloom_filter
          // bucket and loop
          _bucket <= _bucket_nxt;
          _loop <= _loop_nxt;
+
+         data_aft_shft <= dado_deslocado;
       end	
 	 end //always @(posedge clk)
 
