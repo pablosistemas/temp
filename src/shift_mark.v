@@ -43,13 +43,14 @@ module shift_mark
       input [BITS_SHIFT-1:0]                 cur_bucket,
       input [BLOOM_POS-BITS_SHIFT-1:0]       cur_loop,
    
-      /* Bloom filter: last addr updated in SRAM */   
-      //output reg [SRAM_ADDR_WIDTH-1:0]       last_addr,
+      // bloom filter protocol
+      input                            bloom_filter_disable,
+      output reg                       shift_disable,
+
 
       // misc
       input                                	reset,
-      input                                	clk
-   );
+      input                                	clk);
 
    // Define the log2 function
    `LOG2_FUNC
@@ -61,8 +62,10 @@ module shift_mark
    localparam WAIT_WATCHDOG = 4;
    localparam WAIT_READ = 8;
    localparam WAIT_WRITE =16;
+   localparam SHIFT_LOCK1 =32;
+   localparam SHIFT_LOCK2 =64;
 	
-	localparam NUM_STATES = 5;
+	localparam NUM_STATES = 7;
    localparam NUM_BITS_REQS = log2(NUM_REQS);
 
    localparam HASH_FIFO_DATA_WIDTH = 1 + 2*SRAM_ADDR_WIDTH;
@@ -99,6 +102,8 @@ module shift_mark
                                           nxt_bucket;
    reg [BLOOM_POS-BITS_SHIFT-1:0]       loop, loop_next,nxt_loop;
 
+   // bloom filter protocol
+   reg                                 shift_disable_nxt;
 
    /* ----------- local assignments -----------*/
    
@@ -244,11 +249,32 @@ module shift_mark
       bucket_next = bucket;
       loop_next = loop;
 
+      // bloom filter protocol
+      shift_disable_nxt = shift_disable;
+
 	 	case(state)
+         // bloom filter protocol
+         SHIFT_LOCK1: begin
+         if(!bloom_filter_disable) begin
+            shift_disable_nxt = 1'b1;
+            state_next = SHIFT_LOCK2;
+         end
+         end
+         SHIFT_LOCK2: begin
+            if(!bloom_filter_disable) begin
+               state_next = SRAM_READ;
+            end
+            else begin
+               state_next = SHIFT_LOCK1;
+               shift_disable_nxt = 1'b0;
+            end
+         end
 	 		SRAM_READ: begin
 	 		if(!in_fifo_shift_full && enable) begin
-            if(rd_shi_addr == ADDR_BOUND-1)
+            if(rd_shi_addr == ADDR_BOUND-1) begin
                state_next = WAIT_WATCHDOG;
+               shift_disable_nxt = 1'b0;
+            end
             else begin
                rd_shi_req_next = 1;
                state_next = WAIT_READ;
@@ -291,8 +317,11 @@ module shift_mark
 	 		end 
 	 		end //SRAM_READ
 	 		SRAM_WRITE: begin
-	 		if(in_fifo_shift_empty) 
-            state_next = SRAM_READ;
+         if(in_fifo_shift_empty) begin
+            // restarts the protocol
+            state_next = SHIFT_LOCK1; //SRAM_READ;
+            shift_disable_nxt =1'b0;
+         end
          else begin
             wr_shi_req_next = 1;
             state_next = WAIT_WRITE;
@@ -323,7 +352,9 @@ module shift_mark
 	 		end 
          WAIT_WATCHDOG: begin 
             if(watchdog_fired) begin
-               state_next = SRAM_READ;
+               // restarts the protocol
+               state_next = SHIFT_LOCK1; //SRAM_READ;
+
                watchdog_fired_next = 0;
 
                //bucket and loop
@@ -341,7 +372,7 @@ module shift_mark
 	 
 	 always @(posedge clk) begin
 	 	if (reset) begin
-	 		state <= SRAM_READ;
+	 		state <= SHIFT_LOCK1;//SRAM_READ;
          wr_shi_data <= 0;
 	 	   {rd_shi_req,wr_shi_req} <= 2'b0;
          {rd_shi_addr,wr_shi_addr} <= 0;
@@ -360,6 +391,8 @@ module shift_mark
          // persistence
          delay <= 0;
 
+         // bloom filter protocol
+         shift_disable <=1'b0;
 	 	end else begin
          if(watchdog_signal) begin
             //state <= SRAM_READ;
@@ -394,6 +427,8 @@ module shift_mark
          bucket <= bucket_next;
          loop <= loop_next;
 
+         // bloom filter protocol
+         shift_disable <=shift_disable_nxt;
       end	
 	 end //always @(posedge clk)
 

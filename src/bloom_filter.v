@@ -68,8 +68,9 @@ module bloom_filter
    localparam PAYLOAD2 =512;
    localparam NOP1 =1024;
    localparam NOP2 =2048;
+   localparam REQ_SHIFT_STOP =4096;
 	
-	localparam NUM_STATES = 12;
+	localparam NUM_STATES = 13;
 
    localparam TUPLE_WIDTH =96;
 
@@ -213,6 +214,10 @@ module bloom_filter
 	
    reg [SRAM_DATA_WIDTH-1:0]              data_aft_shft;
 
+   reg                                bloom_filter_disable_nxt;
+
+   reg                                bloom_filter_disable;
+
 	/* ----------- local assignments -----------*/
 	/* hash FIFO */
    assign in_rdy = !in_fifo_hash_full;
@@ -336,7 +341,11 @@ module bloom_filter
          .enable        (enable),
     		.clk           (clk),
     		.reset         (reset));
-	 
+	
+
+   // wires for bloom filter protocol
+   wire                 shift_disable;   
+
    shift_mark #(
       .SRAM_ADDR_WIDTH (SRAM_ADDR_WIDTH),
       .SRAM_DATA_WIDTH (SRAM_DATA_WIDTH),
@@ -361,7 +370,9 @@ module bloom_filter
 
       .cur_bucket       (cur_bucket),
       .cur_loop         (cur_loop),
-      //.last_addr      (last_addr),
+
+      .bloom_filter_disable      (bloom_filter_disable),
+      .shift_disable             (shift_disable),
 
       .reset            (reset),
       .clk              (clk));
@@ -391,9 +402,18 @@ module bloom_filter
       //read_persistence
       delay_next = delay;
 
+      // protocol to sram access between bloom filter and shift
+      bloom_filter_disable_nxt = bloom_filter_disable;
+      
 	 	case(state)
+         REQ_SHIFT_STOP: begin
+            if(!in_fifo_hash_empty && enable) begin
+               bloom_filter_disable_nxt = 1'b1;
+               state_next = ADDR1;
+            end
+         end
 	 		ADDR1: begin
-	 		if(!in_fifo_hash_empty && enable) begin
+	 		if(enable && !shift_disable) begin
             rd_addr_next = low_addr;
             rd_req_next = 1;
             state_next = WAIT_ADDR1;
@@ -482,11 +502,14 @@ module bloom_filter
          	if(wr_ack) begin
 	   	      medicao2_next = latencia;
 
-               // we don't record in fifo when pkt is not ack
+            // we don't record in fifo when pkt is not ack
                if(!hash_is_ack) begin
-                  state_next = ADDR1;
                   /* catch next tuple */
                   in_fifo_hash_rd_en = 1;
+
+                  // free shift.v
+                  bloom_filter_disable_nxt = 1'b0;
+                  state_next =REQ_SHIFT_STOP; //ADDR1;
                end
    	      end
 
@@ -497,7 +520,7 @@ module bloom_filter
          /* if fifo is full, discard */
             if(!in_fifo_med_full) begin 
                in_fifo_med_din = tuple[95:32]; //ip1 e ip2
-               in_fifo_med_wr =1;
+               in_fifo_med_wr =1'b1;
                state_next = PAYLOAD2;
             end
             /*   state_next = ADDR1;
@@ -506,10 +529,13 @@ module bloom_filter
          end
          PAYLOAD2: begin
             in_fifo_med_din = {tuple[31:0],medicao};
-            in_fifo_med_wr =1;
-            state_next = ADDR1;
+            in_fifo_med_wr =1'b1;
             /* catch next tuple */
-            in_fifo_hash_rd_en = 1;
+            in_fifo_hash_rd_en = 1'b1;
+
+            // free shift.v
+            bloom_filter_disable_nxt = 1'b0;
+            state_next =REQ_SHIFT_STOP;//ADDR1;
          end
          default: begin
             $display("DEFAULT BLOOM FILTER\n");
@@ -520,7 +546,7 @@ module bloom_filter
 	 
 	 always @(posedge clk) begin
 	 	if (reset) begin
-	 		state <= ADDR1;
+	 		state <= REQ_SHIFT_STOP; //ADDR1;
          wr_data <= 0;
 	 	   {rd_req,wr_req} <= 2'b0;
          {rd_addr,wr_addr} <= 0;
@@ -536,6 +562,9 @@ module bloom_filter
          delay <=0;
 
          data_aft_shft <= {SRAM_DATA_WIDTH{1'b0}};
+
+         // bloom filter vs shift
+         bloom_filter_disable <= 1'b0;
 
 	 	end else begin
          if(watchdog) begin
@@ -569,6 +598,10 @@ module bloom_filter
          _loop <= _loop_nxt;
 
          data_aft_shft <= dado_deslocado;
+
+         // bloom filter vs shift
+         bloom_filter_disable <= bloom_filter_disable_nxt;
+
       end	
 	 end //always @(posedge clk)
 
