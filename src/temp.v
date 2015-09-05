@@ -99,7 +99,9 @@ module temp
    reg[31:0]                        ackno, ackno_next;
    reg[15:0]                        pld_len, pld_len_next;
    
-   reg                                       pkt_is_ack_next;
+   reg                              pkt_is_ack_next;
+   reg                              pkt_has_data;
+   reg                              pkt_has_data_next;
    
 
 
@@ -176,7 +178,7 @@ module temp
       num_TCP_next = num_TCP;
 
       pkt_is_ack_next = pkt_is_ack;
-      pld_len_next = pld_len;
+      pkt_has_data_next = pkt_has_data;
       
       srcip_next = srcip;
       dstip_next = dstip;
@@ -184,6 +186,7 @@ module temp
       dstport_next = dstport; 
       seqno_next = seqno;
       ackno_next = ackno;
+      pld_len_next = pld_len;
       
       case(state)
       WAIT_PACKET: begin
@@ -222,6 +225,12 @@ module temp
             else begin
                state_next = PAYLOAD;
             end
+
+            if(in_fifo_data[63:48]!=16'h0)
+               pkt_has_data_next = 1'b1;
+            else
+               pkt_has_data_next = 1'b0;
+
             pld_len_next =in_fifo_data[63:48];
          end
       end
@@ -269,7 +278,14 @@ module temp
       BLOOM_CTRL: begin
          if (bloom_rdy) begin
             bloom_wr = 1;
-            state_next = PAYLOAD;
+
+         /* if pkt ack+data we back to same state
+            * to write data in bloom filter 
+            * */
+            if(pkt_has_data && pkt_is_ack) 
+               pkt_is_ack_next = 1'b0;
+            else
+               state_next = PAYLOAD;
          end
       end
       PAYLOAD: begin
@@ -289,8 +305,9 @@ module temp
       if(reset) begin
          state <= WAIT_PACKET;
          num_TCP <= 0;
-         pkt_is_ack <= 0;
-        
+         pkt_is_ack <= 1'b0;
+         pkt_has_data <=1'b0;
+
          //tupla 
          srcip <= 32'h0;
          dstip <= 32'h0;
@@ -304,8 +321,10 @@ module temp
          state <= state_next;
          num_TCP <= num_TCP_next;
          
-         /* tupla */ 
          pkt_is_ack <= pkt_is_ack_next;    
+         pkt_has_data <=pkt_has_data_next;
+
+         /* tupla */ 
          srcip <= srcip_next;
          dstip <= dstip_next;
          srcport <= srcport_next;
@@ -332,6 +351,8 @@ module temp
          $display("seqno: %d\n",seqno_next);
          $display("ackno: %d\n",ackno_next);
          $display("pldlen: %d\n",pld_len_next);
+         if(pkt_is_ack && pkt_has_data)
+            $display("ack+data\n");
       end
 
       /*if(state_next == WAIT_PACKET)
