@@ -49,61 +49,86 @@ my $length = 100;
 my $ttl = 30;
 my $dst_ip = 0;
 my $src_ip = 0;
+my $seqno = 0;
+my $ackno = 0;
+
 my $pkt;
 my $cpudelay = 25000;
 my $queue;
 
 $delay = 9000;
-$length = 64;
 $queue = 1;
 
-my $num_pkts = 25;
+$length = 64;
 
-for(my $i = 0; $i < $num_pkts ; $i++){
-   # cria pacote TCP -> função adicionada na biblioteca
-   
-   $SRC_IP = sprintf("192.168.%d.1",$i);
-   $DST_IP = sprintf("192.168.%d.1",$i+1);
+my $num_pkts = 30;
+my $num_iter = 1;
 
-   $SA = sprintf("00:ca:fe:00:00:%02d",$i);
-   $DA = sprintf("00:ca:fe:00:00:%02d",$i+1);
+$seqno = int(rand(2**32));
 
-   my $params_ref = [$length,
-      $SA,
-      $DA,
-      $ttl, 
-      $SRC_IP,
-      $DST_IP,
-      6000+$i,
-      6000+$i+1,
-      0x02 # SYN flag     
-   ];
+my $eth_len = 14;
+my $ip_total_len = $length-$eth_len;
+my $ip_hdr_len = 20;
+my $data_offset = 5; #number of 32-bit words in tcp hdr
+my $tcp_hdr_len = $data_offset*4;
+my $pld_len = $ip_total_len-$ip_hdr_len-$tcp_hdr_len;
 
-   $pkt = SimLib::make_IP_TCP_pkt(@{$params_ref});
+for(my $j = 0; $j < $num_iter; $j++){
 
-   NF::PacketGen::nf_packet_in($queue, $length, 
-      $delay, $batch, $pkt);
-   NF::PacketGen::nf_expected_dma_data($queue, 
-      $length, $pkt);
+   $ackno = $seqno+$pld_len+1;
 
-   # ACK
+   for(my $i = 0; $i < $num_pkts; $i++){
+      # cria pacote TCP -> função adicionada na biblioteca
+      
+      $SRC_IP = sprintf("192.168.%d.1",$i);
+      $DST_IP = sprintf("192.168.%d.1",$i+1);
 
-   my $params_ref = [$length,
-      $DA,
-      $SA,
-      $ttl, 
-      $DST_IP,
-      $SRC_IP,
-      6000+$i+1,
-      6000+$i,
-      0x10 # ACK flag      
-   ];
+      $SA = sprintf("00:ca:fe:00:00:%02d",$i);
+      $DA = sprintf("00:ca:fe:00:00:%02d",$i+1);
+      
 
-   $pkt = SimLib::make_IP_TCP_pkt(@{$params_ref});
-   NF::PacketGen::nf_packet_in($queue, $length, 
-      $delay*10, $batch, $pkt);
-   NF::PacketGen::nf_expected_dma_data($queue, 
-      $length, $pkt);
+      my $params_ref = [$length,
+         $SA,
+         $DA,
+         $ttl, 
+         $SRC_IP,
+         $DST_IP,
+         6000+$i,
+         6000+$i+1,
+         0x02, # offset|SYN flag     
+         $seqno, 0 
+      ];
+
+      $pkt = SimLib::make_IP_TCP_pkt(@{$params_ref});
+
+      NF::PacketGen::nf_packet_in($queue, $length, 
+         $delay, $batch, $pkt);
+      NF::PacketGen::nf_expected_dma_data($queue, 
+         $length, $pkt);
+
+      # ACK
+
+      my $params_ref = [$length,
+         $DA,
+         $SA,
+         $ttl, 
+         $DST_IP,
+         $SRC_IP,
+         6000+$i+1,
+         6000+$i,
+         0x10, # ACK flag      
+         0, $ackno
+      ];
+
+      $pkt = SimLib::make_IP_TCP_pkt(@{$params_ref});
+      NF::PacketGen::nf_packet_in($queue, $length, 
+         $delay*10, $batch, $pkt);
+      NF::PacketGen::nf_expected_dma_data($queue, 
+         $length, $pkt);
+   }
+
+   $seqno = $seqno+$j*$pld_len+1;
+
 }
 
 NF::PacketGen::nf_expected_dma_data(3,$length,$pkt);
