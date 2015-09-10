@@ -61,7 +61,7 @@ $queue = 1;
 
 $length = 64;
 
-my $num_pkts = 30;
+my $num_pkts = 7;
 my $num_iter = 1;
 
 $seqno = int(rand(2**32));

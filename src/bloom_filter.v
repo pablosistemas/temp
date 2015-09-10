@@ -584,8 +584,8 @@ module bloom_filter
          state <= state_next;
          wr_data <= wr_data_next;
          {rd_req,wr_req} <= {rd_req_next,wr_req_next};
-         rd_addr <= {{9{1'b0}},rd_addr_next[9:0]};
-         wr_addr <= {{9{1'b0}},wr_addr_next[9:0]};
+         rd_addr <= rd_addr_next;//{{9{1'b0}},rd_addr_next[9:0]};
+         wr_addr <= wr_addr_next;//{{9{1'b0}},wr_addr_next[9:0]};
          medicao1 <=medicao1_next;
          medicao2 <=medicao2_next;
          //end

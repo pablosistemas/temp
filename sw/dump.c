@@ -17,7 +17,7 @@
 
 #include <net/if.h>
 
-#include "../lib/C/reg_defines_temp.h"
+#include "../lib/C/reg_defines_cria_pkts.h"
 #include "../../../lib/C/common/nf2.h"
 #include "../../../lib/C/common/nf2util.h"
 
@@ -40,6 +40,7 @@
 static struct nf2device nf2;
 char ip[INET_ADDRSTRLEN];
 uint16_t porta;
+struct sockaddr_in servidor; 
 
 /* Function declarations */
 void *dumpCounts();
@@ -66,9 +67,57 @@ int main(int argc, char *argv[])
       exit(1);
     }
 
-  dumpCounts();
+  /* SOCKET */
+  int fd;
+  if((fd = socket(AF_INET,SOCK_DGRAM,0)) < 0){
+     printf("ERROR! socket\n");
+     goto exit_thread;
+  }
 
+  /* THREAD - dumpCount() */
+  int rc;
+  pthread_t thread;       
+  rc = pthread_create(&thread,NULL,dumpCounts,NULL);
+  if(rc){
+     printf("ERROR! Return code from pthread_create is %d\n", rc);
+     goto exit_no_thread;
+  }
+  
+  bzero((void*)&servidor, sizeof(servidor));
+  servidor.sin_family = AF_INET;
+  inet_pton(AF_INET,ip,(void*)&(servidor.sin_addr.s_addr));
+  servidor.sin_port = htons(porta);
+
+  int rb;
+  if((rb = bind(fd, (struct sockaddr *)&servidor, sizeof(servidor))) < 0){
+    printf("ERROR! bind\n");
+    goto exit_thread;
+  } 
+
+  printf("listener: waiting to recvfrom\n");
+
+  char buf[MAXBUFLEN];
+  int numbytes;
+  struct sockaddr_storage their_addr;
+  socklen_t addr_len;
+   
+  while(1){
+     if((numbytes = recvfrom(fd, buf, MAXBUFLEN-1, 0,
+              (struct sockaddr *)&their_addr, &addr_len)) == -1){
+        printf("ERROR! recvfrom\n");
+        goto exit_thread;
+     }
+      
+     buf[numbytes] = '\0';
+     printf("DADOS DO PACOTE: \n%s\n\n",buf); 
+  }
+
+exit_thread:
+  pthread_exit(NULL);
+
+exit_no_thread: 
   closeDescriptor(&nf2);
+  close(fd); 
   return 0;
 }
 
@@ -127,6 +176,27 @@ void *dumpCounts()
   printf("Num pkts sent from port 3:             %u\n", val);
   readReg(&nf2, MAC_GRP_3_TX_QUEUE_NUM_BYTES_PUSHED_REG, &val);
   printf("Num bytes sent from port 3:            %u\n\n", val);
+
+  /* udp header */
+  uint32_t *ip = &servidor.sin_addr.s_addr;
+  writeReg(&nf2,MAKER_DST_MAC_HI_REG,0x00<<24|0x00<<16|0xC8<<8|0x2A);
+  writeReg(&nf2,MAKER_DST_MAC_LO_REG,0x14<<24|0x39<<16|0x71<<8|0xCD);
+
+  writeReg(&nf2,MAKER_SRC_MAC_HI_REG,0x00<<24|0x00<<16|0xD0<<8|0x27);
+  writeReg(&nf2,MAKER_SRC_MAC_LO_REG,0x88<<24|0xBC<<16|0xA8<<8|0xB9);
+
+  writeReg(&nf2,MAKER_ETHERTYPE_REG,0x800);
+
+  writeReg(&nf2,MAKER_IP_DST_REG,*ip);
+  writeReg(&nf2,MAKER_IP_SRC_REG,127<<24|0<<16|0<<8|2);
+
+  writeReg(&nf2,MAKER_UDP_SRC_PORT_REG,porta);
+  writeReg(&nf2,MAKER_UDP_DST_PORT_REG,porta);
+
+  writeReg(&nf2,MAKER_OUTPUT_PORT_REG,0x4);
+
+  /* enable packets */
+  writeReg(&nf2,MAKER_ENABLE_REG,1);
 
   pthread_exit(NULL);
 }

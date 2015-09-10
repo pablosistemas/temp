@@ -12,7 +12,7 @@ nftest_init(sim_loop = [], hw_config = [phy2loop0])
 nftest_start()
 
 #The num_pkts set here must be changed in simulacao.v(line 1054), too
-NUM_PKTS = 10
+NUM_PKTS = 20
 
 eth_hdr=14
 ipv4_hdr=20

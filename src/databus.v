@@ -83,10 +83,10 @@ module databus
    * eh necessario mudar o tamanho do pacote no metacabecalho
    * em cria_pks.v */
 
-   localparam          NUM_WORDS_PAYLOAD =8;
+   localparam          NUM_WORDS_PAYLOAD =8;//8 for test
    localparam          NUM_WORDS_IN_HDR =7;
    /* */
-   localparam          CTRL_LAST_WORD=calcula_last_ctrl(100,CTRL_WIDTH,DATA_WIDTH);
+   localparam          CTRL_LAST_WORD=calcula_last_ctrl(NUM_WORDS_PAYLOAD,CTRL_WIDTH,DATA_WIDTH);
 
 
    //------------------------- Signals-------------------------------
@@ -141,7 +141,7 @@ module databus
    /* envia apenas se houver, no minimo, NUM_WORDS_PAYLOAD */ 
    fallthrough_small_fifo_old #(
       .WIDTH(WORD_WIDTH),
-      .MAX_DEPTH_BITS(5),//(log2(NUM_WORDS_PAYLOAD)+1),
+      .MAX_DEPTH_BITS(10),//(log2(NUM_WORDS_PAYLOAD)+1),
       .NEARLY_FULL(NUM_WORDS_PAYLOAD) 
    ) pld_fifo (
       .din           (pld_fifo_din),//Data in
@@ -156,8 +156,9 @@ module databus
    );
 
    cria_pkts #(
-      .DATA_WIDTH(DATA_WIDTH),
-      .HEADER_LENGTH(NUM_WORDS_IN_HDR)
+      .DATA_WIDTH          (DATA_WIDTH),
+      .NUM_WORDS_PAYLOAD   (NUM_WORDS_PAYLOAD),   
+      .HEADER_LENGTH       (NUM_WORDS_IN_HDR)
    ) cria_pkts (
       .reg_req_in          (reg_req_in), 
       .reg_ack_in          (reg_ack_in),           

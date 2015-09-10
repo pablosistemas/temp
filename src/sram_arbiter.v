@@ -99,7 +99,8 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
       end
       else begin
          if(do_reset) begin
-            if(sram_addr == {{(SRAM_ADDR_WIDTH-SHIFT_WIDTH){1'b0}},{SHIFT_WIDTH{1'b1}}}) begin
+            if(sram_addr == {SRAM_ADDR_WIDTH{1'b1}}) begin
+            //if(sram_addr == {{(SRAM_ADDR_WIDTH-SHIFT_WIDTH){1'b0}},{SHIFT_WIDTH{1'b1}}}) begin
                do_reset               <= 0;
                {sram_we, sram_bw}     <= -1; // active low
                {rd_0_ack,rd_1_ack}    <= 2'b0;

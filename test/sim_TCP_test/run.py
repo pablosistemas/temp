@@ -67,7 +67,7 @@ nftest_regread_expect(reg_defines.MAKER_ENABLE_REG(),1)
 ##
 
 #The num_pkts set here must be changed in simulacao.v(line 1054), too
-NUM_PKTS = 1
+NUM_PKTS = 3
 
 eth_hdr =14
 ipv4_hdr =20
@@ -75,7 +75,7 @@ tcp_hdr =20
 pkt_len =64
 hdr_len =eth_hdr+ipv4_hdr+tcp_hdr
 
-simPkt.delay(7000000)
+simPkt.delay(7000)
 
 for iter in range(1):
    for i in range(NUM_PKTS):
