@@ -161,7 +161,7 @@ module cria_pkts
    /* set the module header */
    assign module_hdr [`IOQ_BYTE_LEN_POS + 15:`IOQ_BYTE_LEN_POS] = eth_pkt_len;
    assign module_hdr [`IOQ_WORD_LEN_POS + 15:`IOQ_WORD_LEN_POS] = {7'b0, eth_pkt_word_len};
-   assign module_hdr [`IOQ_SRC_PORT_POS + 15:`IOQ_SRC_PORT_POS] = 16'h0;
+   assign module_hdr [`IOQ_SRC_PORT_POS + 15:`IOQ_SRC_PORT_POS] = 16'hffff;
 /* OutputPortLookup NIC-based automatically fill the 
    * destination port on header based on src port.  
    * Odd number in SRC port means the pkt came from cpu

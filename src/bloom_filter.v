@@ -81,7 +81,7 @@ module bloom_filter
    localparam BITS_SHIFT = log2(NUM_BUCKETS);
 
    localparam CLK = 8*10**-9;
-   localparam TIMER = 2**14; //2875000 perbucket~=320ms total
+   localparam TIMER = 2875000; //2875000 perbucket~=320ms total
 
    // Define the log2 function
    `LOG2_FUNC
