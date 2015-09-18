@@ -49,6 +49,11 @@ module atualiza_linha
          $display("loop ERROR: %h,buck: %d, loop: %d\n",data,cur_bucket,cur_loop);
    //if addr was previously updated by write data|ack op
          //$stop;
+      // this case will be used in counter overflow
+         if(({1'b1,cur_loop} - (data_loop)) > 'h2)
+            shifts = NUM_BUCKETS; //zera linha
+         else
+            shifts = NUM_BUCKETS-data_bucket+cur_bucket+1;
       end
       if(cur_loop==data_loop && cur_bucket<data_bucket) begin
          $display("bucket ERROR: %h, buck: %d, loop: %d\n",data,cur_bucket,cur_loop);
