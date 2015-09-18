@@ -52,7 +52,6 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
 
     // --- SRAM signals (pins and control)
     output reg [SRAM_ADDR_WIDTH-1:0]   sram_addr,
-    output reg [SRAM_ADDR_WIDTH-1:0]   sram_addr_next,
     output reg                         sram_we,
     output reg [SRAM_DATA_WIDTH/9-1:0] sram_bw,
     output reg [SRAM_DATA_WIDTH-1:0]   sram_wr_data,
@@ -77,6 +76,7 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
 
    reg                       sram_reg_addr_is_high, sram_reg_addr_is_high_d1, sram_reg_addr_is_high_d2;
    reg                        do_reset;
+   reg [SRAM_ADDR_WIDTH-1:0]   sram_addr_next;
 
    assign enable = ~do_reset;
 
@@ -99,8 +99,8 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
       end
       else begin
          if(do_reset) begin
-            if(sram_addr == {SRAM_ADDR_WIDTH{1'b1}}) begin
-            //if(sram_addr == {{(SRAM_ADDR_WIDTH-SHIFT_WIDTH){1'b0}},{SHIFT_WIDTH{1'b1}}}) begin
+            //if(sram_addr == {SRAM_ADDR_WIDTH{1'b1}}) begin
+            if(sram_addr == {{(SRAM_ADDR_WIDTH-SHIFT_WIDTH){1'b0}},{SHIFT_WIDTH{1'b1}}}) begin
                do_reset               <= 0;
                {sram_we, sram_bw}     <= -1; // active low
                {rd_0_ack,rd_1_ack}    <= 2'b0;
@@ -108,9 +108,8 @@ module sram_arbiter  #(parameter SRAM_ADDR_WIDTH = 19,
                {wr_0_ack,wr_1_ack}    <= 2'b0;
             end
             else begin
-               //sram_addr              <= sram_addr + 1'b1;
                sram_addr               <= sram_addr_next;
-               sram_addr_next          <= sram_addr_next+1'b1;
+               sram_addr_next          <= sram_addr_next+19'h1;
                {sram_we, sram_bw}     <= 9'h0;
 
                sram_wr_data_early2 <=0;

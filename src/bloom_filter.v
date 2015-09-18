@@ -81,7 +81,7 @@ module bloom_filter
    localparam BITS_SHIFT = log2(NUM_BUCKETS);
 
    localparam CLK = 8*10**-9;
-   localparam TIMER = 2875000; //2875000 perbucket~=320ms total
+   localparam TIMER = 2**10;// 2875000; //2875000 perbucket~=320ms total
 
    // Define the log2 function
    `LOG2_FUNC
@@ -328,7 +328,7 @@ module bloom_filter
       .latencia   (latencia));
 
    /* if medicao1 is diferent from medicao2 means false positive */
-   assign medicao = medicao1==medicao2?medicao1:0;
+   assign medicao = medicao1==medicao2?medicao1:'hf;
 
 
    /* fires an updating signal when reached time to shift 
@@ -546,13 +546,15 @@ module bloom_filter
 	 
 	 always @(posedge clk) begin
 	 	if (reset) begin
-	 		state <= REQ_SHIFT_STOP; //ADDR1;
-         wr_data <= 0;
-	 	   {rd_req,wr_req} <= 2'b0;
-         {rd_addr,wr_addr} <= 0;
-         {medicao1,medicao2} <=0;
-         cur_bucket <= 'h0;
-         cur_loop <='h0;
+	 		state             <= REQ_SHIFT_STOP; //ADDR1;
+         wr_data           <= {SRAM_DATA_WIDTH{1'b0}};
+	 	   {rd_req,wr_req}   <= 2'b0;
+         rd_addr           <= {SRAM_ADDR_WIDTH{1'b0}};
+         wr_addr           <= {SRAM_ADDR_WIDTH{1'b0}};
+         medicao1          <= {BITS_SHIFT{1'b0}};
+         medicao2          <= {BITS_SHIFT{1'b0}};
+         cur_bucket        <= 'h0;
+         cur_loop          <='h0;
          
          // bucket and loop in search
          _bucket <=0;
@@ -584,8 +586,8 @@ module bloom_filter
          state <= state_next;
          wr_data <= wr_data_next;
          {rd_req,wr_req} <= {rd_req_next,wr_req_next};
-         rd_addr <= rd_addr_next;//{{9{1'b0}},rd_addr_next[9:0]};
-         wr_addr <= wr_addr_next;//{{9{1'b0}},wr_addr_next[9:0]};
+         rd_addr <= /*rd_addr_next;//*/{{9{1'b0}},rd_addr_next[9:0]};
+         wr_addr <= /*wr_addr_next;//*/{{9{1'b0}},wr_addr_next[9:0]};
          medicao1 <=medicao1_next;
          medicao2 <=medicao2_next;
          //end
@@ -647,65 +649,3 @@ module bloom_filter
    //synthesis translate_on
     
 endmodule
-
-/*
-*	 always @(*) begin
-	 	in_fifo_hash_rd_en = 0;
-	 	{rd_req_next, wr_req_next} = 2'b0;
-	 	{rd_addr_next, wr_addr_next} = {rd_addr, wr_addr};
-	 	wr_data_next = wr_data;
-	 	
-      state_next = state;
-
-	 	case(state)
-	 		ADDR1: begin
-	 		if(!in_fifo_hash_empty) begin
-            if(low_addr <= last_addr) begin
-               rd_addr_next = low_addr;
-               rd_req_next = 1;
-               state_next = WAIT_ADDR1;
-            end
-	 		end
-	 		end 
-         WAIT_ADDR1: begin
-            if(rd_ack)
-               state_next = ADDR2;
-            else rd_req_next = 1;
-         end
-         ADDR2: begin
-            if(high_addr <= last_addr) begin
-               rd_addr_next = high_addr;
-               rd_req_next = 1;
-               state_next = WAIT_ADDR2;
-            end
-	 		end
-         WAIT_ADDR2: begin
-            if(rd_ack)
-               state_next = WRITE_ADDR1;
-            else rd_req_next = 1;
-         end
-         WRITE_ADDR1: begin
-            if (!in_fifo_sram_empty) begin
-               if(hash_is_ack)
-                  wr_data_next = updated_ack;
-               else
-                  wr_data_next = updated_data;
-               in_fifo_hash_rd_en = 1;
-               state_next = WAIT_WR_ADDR1;
-            end
-         end
-         WAIT_WR_ADDR1: begin
-            if(wr_ack)
-               state_next = WRITE_ADDR2;
-            else 
-               wr_req_next = 1;
-         end
-         WRITE_ADDR2: begin
-            state_next = 
-         end
-         default: begin
-            $display("DEFAULT BLOOM FILTER\n");
-            $stop;
-         end
-	 	endcase
-	 end */

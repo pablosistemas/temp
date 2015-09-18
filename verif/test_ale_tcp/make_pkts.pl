@@ -34,7 +34,7 @@ NF::PacketGen::nf_PCI_write32(0,$batch,MAKER_IP_SRC_REG(),127<<24|2);
 NF::PacketGen::nf_PCI_write32(0,$batch,MAKER_UDP_SRC_PORT_REG(),5556);
 NF::PacketGen::nf_PCI_write32(0,$batch,MAKER_UDP_DST_PORT_REG(),6665);
 
-NF::PacketGen::nf_PCI_write32(0,$batch,MAKER_OUTPUT_PORT_REG(),16);
+NF::PacketGen::nf_PCI_write32(0,$batch,MAKER_OUTPUT_PORT_REG(),4);
 NF::PacketGen::nf_PCI_write32('@0.1us',$batch,MAKER_ENABLE_REG(),1);
 
 # NetFPGA OUTPUT PORTS: ONE_HOT
@@ -61,7 +61,7 @@ $queue = 1;
 
 $length = 64;
 
-my $num_pkts = 7;
+my $num_pkts = 15;
 my $num_iter = 1;
 
 $seqno = int(rand(2**32));
@@ -122,7 +122,7 @@ for(my $j = 0; $j < $num_iter; $j++){
 
       $pkt = SimLib::make_IP_TCP_pkt(@{$params_ref});
       NF::PacketGen::nf_packet_in($queue, $length, 
-         $delay*10, $batch, $pkt);
+         $delay+int(rand(2**10)), $batch, $pkt);
       NF::PacketGen::nf_expected_dma_data($queue, 
          $length, $pkt);
    }
@@ -135,8 +135,57 @@ NF::PacketGen::nf_expected_dma_data(3,$length,$pkt);
 
 nf_PCI_read32('@30us',$batch,IN_ARB_NUM_PKTS_SENT_REG(),
    $num_pkts);
+
 nf_PCI_read32('@9us',$batch,
-   BRAM_OQ_QUEUE_5_NUM_PKTS_RECEIVED_REG(),1);
+   MAC_GRP_0_TX_QUEUE_NUM_PKTS_SENT_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   MAC_GRP_1_TX_QUEUE_NUM_PKTS_SENT_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   MAC_GRP_2_TX_QUEUE_NUM_PKTS_SENT_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   MAC_GRP_3_TX_QUEUE_NUM_PKTS_SENT_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   MAC_GRP_0_RX_QUEUE_NUM_PKTS_DEQUEUED_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   MAC_GRP_1_RX_QUEUE_NUM_PKTS_DEQUEUED_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   MAC_GRP_2_RX_QUEUE_NUM_PKTS_DEQUEUED_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   MAC_GRP_3_RX_QUEUE_NUM_PKTS_DEQUEUED_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   CPU_QUEUE_0_TX_QUEUE_NUM_PKTS_ENQUEUED_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   CPU_QUEUE_1_TX_QUEUE_NUM_PKTS_ENQUEUED_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   CPU_QUEUE_2_TX_QUEUE_NUM_PKTS_ENQUEUED_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   CPU_QUEUE_3_TX_QUEUE_NUM_PKTS_ENQUEUED_REG (),$num_pkts/4);
+
+
+nf_PCI_read32('@9us',$batch,
+   CPU_QUEUE_0_RX_QUEUE_NUM_PKTS_ENQUEUED_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   CPU_QUEUE_1_RX_QUEUE_NUM_PKTS_ENQUEUED_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   CPU_QUEUE_2_RX_QUEUE_NUM_PKTS_ENQUEUED_REG (),$num_pkts/4);
+
+nf_PCI_read32('@9us',$batch,
+   CPU_QUEUE_3_RX_QUEUE_NUM_PKTS_ENQUEUED_REG (),$num_pkts/4);
+
+
 
 # *********** Finishing Up - need this in all scripts ! ****************************
 my $t = nf_write_sim_files();
