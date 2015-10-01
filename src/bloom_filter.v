@@ -80,8 +80,7 @@ module bloom_filter
    localparam BLOOM_POS = 16; //num bits reserved
    localparam BITS_SHIFT = log2(NUM_BUCKETS);
 
-   localparam CLK = 8*10**-9;
-   localparam TIMER = 2**10;// 2875000; //2875000 perbucket~=320ms total
+   localparam TIMER = 2875000; //2875000 perbucket~=320ms total
 
    // Define the log2 function
    `LOG2_FUNC
@@ -185,8 +184,8 @@ module bloom_filter
    /* interface to SRAM */
    reg [SRAM_DATA_WIDTH-1:0]					wr_data_next;
    reg [SRAM_ADDR_WIDTH-1:0]					wr_addr_next;
-	reg												wr_req_next;
    reg [SRAM_ADDR_WIDTH-1:0]					rd_addr_next;
+	reg												wr_req_next;
 	reg												rd_req_next;
 
 	wire [NUM_BUCKETS-1:0]   					indice;
@@ -573,33 +572,34 @@ module bloom_filter
             $display("bloom_watchdog\n");
             /* updates bloom filter counter */
             if(cur_bucket == 13)  begin
-               cur_loop <= cur_loop + 'h1;
-               cur_bucket <= 'h0;
+               cur_loop    <= cur_loop + 'h1;
+               cur_bucket  <= 'h0;
             end
             else begin
-               cur_bucket <= cur_bucket+'h1;
-               cur_loop <= cur_loop;
+               cur_bucket  <= cur_bucket+'h1;
+               cur_loop    <= cur_loop;
             end
 
          end 
          //else begin
-         state <= state_next;
-         wr_data <= wr_data_next;
-         {rd_req,wr_req} <= {rd_req_next,wr_req_next};
-         rd_addr <= /*rd_addr_next;//*/{{9{1'b0}},rd_addr_next[9:0]};
-         wr_addr <= /*wr_addr_next;//*/{{9{1'b0}},wr_addr_next[9:0]};
-         medicao1 <=medicao1_next;
-         medicao2 <=medicao2_next;
+         state          <= state_next;
+         wr_data        <= wr_data_next;
+         rd_req         <= rd_req_next;
+         wr_req         <= wr_req_next;
+         rd_addr        <= /*rd_addr_next;//*/{{9{1'b0}},rd_addr_next[9:0]};
+         wr_addr        <= /*wr_addr_next;//*/{{9{1'b0}},wr_addr_next[9:0]};
+         medicao1       <= medicao1_next;
+         medicao2       <= medicao2_next;
          //end
          
          // persistence
-         delay <=delay_next;
+         delay          <= delay_next;
 
          // bucket and loop
-         _bucket <= _bucket_nxt;
-         _loop <= _loop_nxt;
+         _bucket        <= _bucket_nxt;
+         _loop          <= _loop_nxt;
 
-         data_aft_shft <= dado_deslocado;
+         data_aft_shft  <= dado_deslocado;
 
          // bloom filter vs shift
          bloom_filter_disable <= bloom_filter_disable_nxt;

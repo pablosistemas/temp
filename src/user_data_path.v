@@ -16,7 +16,7 @@
  ******************************************************/
 module user_data_path
   #(parameter DATA_WIDTH = 64,
-    parameter CTRL_WIDTH=DATA_WIDTH/8,
+    parameter CTRL_WIDTH= DATA_WIDTH/8,
     parameter UDP_REG_SRC_WIDTH = 2,
     parameter NUM_OUTPUT_QUEUES = 8,
     parameter NUM_INPUT_QUEUES = 8,

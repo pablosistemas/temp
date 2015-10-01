@@ -6,8 +6,12 @@ use NetPacket::Ethernet qw( :types :strip );
 use NetPacket::IP qw( :protos :strip :versions );
 use NetPacket::UDP qw( :strip );
 use NetPacket::ICMP qw( :strip :types );
+use Getopt::Std;
+use Socket qw( inet_aton );
 
+# global variables
 our %bloom_hash = ();
+our %bloom_counter = ();
 
 sub udp_debug {
    my $udp_packet = shift;
@@ -53,13 +57,21 @@ sub udp_debug {
       $measurement = unpack("H8",substr($payload,$offset+12,4));
 
       $src_ip = sprintf("%0d.%0d.%0d.%0d",$src_oct_1,$src_oct_2,$src_oct_3,$src_oct_4);
-
+      
       $dst_ip = sprintf("%0d.%0d.%0d.%0d",$dst_oct_1,$dst_oct_2,$dst_oct_3,$dst_oct_4);
 
       printf "%s:%d -> %s:%d ... $measurement\n",$src_ip,$port1,$dst_ip,$port2;
-   
-      $bloom_hash{$bloom_key} += $measurement;   
-      printf "%d\n", $bloom_hash{$bloom_key};
+      if(defined ($bloom_hash{$bloom_key})) {
+         $bloom_hash{$bloom_key} += hex($measurement);   
+      } else {
+         $bloom_hash{$bloom_key} = hex($measurement);   
+      }
+
+      if(defined ($bloom_counter{$bloom_key})) {
+         $bloom_counter{$bloom_key} += 1;   
+      } else {
+         $bloom_counter{$bloom_key} = 1;
+      }
 
    }
 
@@ -68,7 +80,7 @@ sub udp_debug {
    my $key;
    my @keys = keys %bloom_hash;
    foreach $key (@keys) {
-      print "bloom{$key}: $bloom_hash{$key}\n";
+      printf "bloom{$key}: $bloom_hash{$key}. Media: %d\n\n", $bloom_hash{$key}*2875000*8*10**-9/$bloom_counter{$key};
    }
 
 }
@@ -123,26 +135,39 @@ sub got_a_packet {
 }
 
 my $err = '';
-my $dev = 'eth0';
+my $dev = 'nf2c0';
+my $number_of_pkts = -1; # loop forever
 
-$dev = $ARGV[0] if (defined $ARGV[0]);
+# parsers the command line
+my %options = ();
+getopts('hi:f:n:',\%options);
+
+#foreach my $key (keys %options) {
+#   printf "options{$key}=$options{$key}\n";
+#}
+
+die "-i <iface>\n-f <filter EXPR>\n-n <number of packets to receive>\n-h for help\n\n" if defined $options{h};
+
+$dev = $options{i} if (defined $options{i});
 print "$dev\n";
 
 my $is_promisc = 1;
 
-my $pcap = Net::Pcap::pcap_open_live($dev,1500,$is_promisc,0,\$err) or die "Cant oopen device $dev: $err\n";
+my $pcap = Net::Pcap::pcap_open_live($dev,1500,$is_promisc,0,\$err) or die "Cant open device $dev: $err\n";
 
+# parsers filter options if there is
 my $filter;
 
-if(defined $ARGV[1]){
-   $err = Net::Pcap::pcap_compile($pcap, \$filter, $ARGV[1], 1, "255.255.255.0");
+if(defined $options{f}){
+   my $netmask = inet_aton "255.255.255.0";
+
+   $err = Net::Pcap::pcap_compile($pcap, \$filter, $options{f}, 1, $netmask);
    if($err == -1){
       die "Unable to compile the filter message\n";
    }
    Net::Pcap::pcap_setfilter($pcap, $filter);
 }
 
-
-Net::Pcap::pcap_loop($pcap,-1,\&got_a_packet,'');
+Net::Pcap::pcap_loop($pcap,$number_of_pkts,\&got_a_packet,'');
 
 pcap_close($pcap);
