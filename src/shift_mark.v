@@ -209,12 +209,12 @@ module shift_mark
       // synthesis translate_on
 
    /* updates data that came from SRAM */
-   atualiza_linha #(
+   atualiza_linha_shift #(
    		.DATA_WIDTH(SRAM_DATA_WIDTH), 
    		.NUM_BUCKETS(NUM_BUCKETS),
          .BUCKET_SZ(NUM_BITS_BUCKET),
          .BLOOM_INIT_POS(BLOOM_POS)
-      ) atualiza_bucket_shift 
+      ) atualiza_shift
         (.data (in_fifo_shift_dout), 
          .output_data (shift_dout), 
          .cur_bucket (bucket),//cur_bucket), 
@@ -271,7 +271,9 @@ module shift_mark
          end
 	 		SRAM_READ: begin
 	 		if(!in_fifo_shift_full && enable) begin
-            if(rd_shi_addr == ADDR_BOUND-1) begin
+            // nao atualiza o ultimo endereco
+            if(rd_shi_addr == ADDR_BOUND) begin
+               $display("indoparawatchdog: %h\n",rd_shi_addr);
                state_next = WAIT_WATCHDOG;
                shift_disable_nxt = 1'b0;
             end
@@ -296,7 +298,8 @@ module shift_mark
 
          if(rd_shi_ack) begin
             $display("READ ack\n");
-            if(rd_shi_addr == ADDR_BOUND-1) begin
+            if(rd_shi_addr == ADDR_BOUND-1'b1) begin
+               rd_shi_addr_next = rd_shi_addr + 1;
                state_next = SRAM_WRITE;
                reqs_next = 0;
             end 
@@ -305,7 +308,8 @@ module shift_mark
                if(reqs == NUM_REQS) begin
                   state_next = SRAM_WRITE;
                   reqs_next = 0;
-               end else begin
+               end 
+               else begin
                   state_next = SRAM_READ;
                   reqs_next = reqs + 1;
                end
@@ -358,8 +362,8 @@ module shift_mark
                watchdog_fired_next = 0;
 
                //bucket and loop
-               bucket_next = nxt_bucket;
-               loop_next = nxt_loop;
+               bucket_next = cur_bucket;//nxt_bucket;
+               loop_next = cur_loop; //nxt_loop;
 
                rd_shi_addr_next = {SRAM_ADDR_WIDTH{1'b0}};
             end
@@ -401,7 +405,7 @@ module shift_mark
             wr_shi_data <= 0;
             reqs <= 0;*/
 
-            rd_shi_addr <= {SRAM_ADDR_WIDTH{1'b0}};
+            //rd_shi_addr <= {SRAM_ADDR_WIDTH{1'b0}};
 
             // watchdog
             watchdog_fired <= 1'b1;
@@ -447,11 +451,11 @@ module shift_mark
        if(watchdog_signal)
           $display("WATCHDOG\n");
        if(rd_shi_vld) begin
-         $display("dataread[%h]: %h\n",sram_addr_dout,rd_shi_data);
+         $display("dataread[%h]:  %h, %d, %d\n",sram_addr_dout,rd_shi_data,bucket,loop);
          sram_fifo_rd_en <= 1;       
        end
        if(wr_shi_ack) begin
-         $display("datawrite[%h]: %h,%d,%d",wr_addr_dout,wr_data_dout,cur_bucket,cur_loop);
+         $display("datawrite[%h]: %h, %d, %d",wr_addr_dout,wr_data_dout,bucket,loop);
          wr_fifo_rd_en <= 1;       
          wr_data_rd_en <= 1;       
       end

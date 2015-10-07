@@ -153,8 +153,7 @@ module temp
       .nearly_full   (),
       .empty         (in_fifo_empty),
       .reset         (reset),
-      .clk           (clk)
-   );
+      .clk           (clk));
 
    hash
      #(.INPUT_WIDTH   (TUPLE_SZ),
