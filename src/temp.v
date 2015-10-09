@@ -155,6 +155,7 @@ module temp
       .reset         (reset),
       .clk           (clk));
 
+
    hash
      #(.INPUT_WIDTH   (TUPLE_SZ),
        .OUTPUT_WIDTH  (19))
@@ -162,6 +163,8 @@ module temp
          (.data              (tuple),
           .hash_0            (index_0),
           .hash_1            (index_1));
+   
+   //assign index_1 = index_0; // just for tests
 
    //------------------------- Logic-------------------------------
    

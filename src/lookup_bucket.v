@@ -32,7 +32,7 @@ module lookup_bucket
          /*for (j=i+2; j < OUTPUT_WIDTH; j=j+1) begin: tt
 	 			assign index[i] = index[i]&(~index[j]);
          end*/
-      	assign index[i] = (index[OUTPUT_WIDTH-1:i+1]>0?0:1)&((data[INPUT_WIDTH-1-(OUTPUT_WIDTH-i-1)*BUCKET_SZ:INPUT_WIDTH-1-(OUTPUT_WIDTH-i)*BUCKET_SZ-1]>0)?1:0);
+      	assign index[i] = (index[OUTPUT_WIDTH-1:i+1]>0?0:1)&((data[INPUT_WIDTH-1-(OUTPUT_WIDTH-i-1)*BUCKET_SZ:INPUT_WIDTH-1-(OUTPUT_WIDTH-i)*BUCKET_SZ+1]>0)?1:0);
       end
    endgenerate
 	

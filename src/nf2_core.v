@@ -507,7 +507,8 @@ module nf2_core #(
    if(DATA_WIDTH==64) begin: sram64
       (* keep_hierarchy = "false" *) sram_arbiter
       #( .SRAM_DATA_WIDTH(DATA_WIDTH+CTRL_WIDTH),
-         .SHIFT_WIDTH(10))
+   /* Simulação - mudar aqui */
+         .SHIFT_WIDTH(/*10))//*/`SRAM_ADDR_WIDTH))
       sram_arbiter
         (// --- Requesters   (read and/or write)
          .wr_0_req           (wr_0_req),
