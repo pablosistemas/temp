@@ -346,8 +346,7 @@ module bloom_filter
 
    /* if medicao1 is different from medicao2 means false positive */
    assign medicao[7:0] = 
-      (medicao1==medicao2 && medicao1 != 'hf && medicao1 != 'h0)?medicao1-1:
-      (medicao1==medicao2 && (medicao1 == 'h0 || medicao1 == 'hf))?medicao1:'hff;
+      (medicao1==medicao2)?medicao1:'hff;
 
    assign medicao[31:8] = in_fifo_t_counter_dout;
 
@@ -445,7 +444,7 @@ module bloom_filter
          else begin
             // current bucket and loop 
             _bucket_nxt =cur_bucket;
-            _loop_nxt =cur_loop;
+            _loop_nxt   =cur_loop;
          end
 	 		end 
 	      WAIT_ADDR1: begin
@@ -457,10 +456,10 @@ module bloom_filter
 		      $display("req_next: %d", rd_req_next);			    
          end
          ADDR2: begin
-            rd_addr_next = high_addr;
+            rd_addr_next   = high_addr;
             $display("highaddr: %h|%h\n",high_addr,low_addr);
-            rd_req_next = 1;
-            state_next = WAIT_ADDR2;
+            rd_req_next    = 1;
+            state_next     = WAIT_ADDR2;
             
             // read_persistence
             delay_next = 0;
@@ -480,8 +479,8 @@ module bloom_filter
          end
          WRITE_ADDR1: begin
             if (!in_fifo_sram_empty) begin
-               wr_req_next = 1'b1;
-               wr_addr_next = low_addr;
+               wr_req_next    = 1'b1;
+               wr_addr_next   = low_addr;
                if(hash_is_ack) begin
                   wr_data_next = updated_ack;
                end
@@ -510,8 +509,8 @@ module bloom_filter
          end
          WRITE_ADDR2: begin
             if (!in_fifo_sram_empty) begin
-               wr_req_next = 1;
-               wr_addr_next = high_addr;
+               wr_req_next    = 1;
+               wr_addr_next   = high_addr;
                if(hash_is_ack) begin
                   wr_data_next = updated_ack;
                end
@@ -546,17 +545,17 @@ module bloom_filter
          /* write in fifo the word with results */
          /* if fifo is full, discard */
             if(!in_fifo_med_full) begin 
-               in_fifo_med_din = tuple[95:32]; //ip1 e ip2
-               in_fifo_med_wr =1'b1;
-               state_next = PAYLOAD2;
+               in_fifo_med_din   = tuple[95:32]; //ip1 e ip2
+               in_fifo_med_wr    = 1'b1;
+               state_next        = PAYLOAD2;
             end
             /*   state_next = ADDR1;
             end else
                state_next = PAYLOAD2;*/
          end
          PAYLOAD2: begin
-            in_fifo_med_din = {tuple[31:0],medicao};
-            in_fifo_med_wr =1'b1;
+            in_fifo_med_din   = {tuple[31:0],medicao};
+            in_fifo_med_wr    = 1'b1;
             /* catch next tuple and next t_counter */
             in_fifo_hash_rd_en      = 1'b1;
             in_fifo_t_counter_rd_en = 1'b1;
@@ -582,14 +581,14 @@ module bloom_filter
          medicao1          <= {BITS_SHIFT{1'b0}};
          medicao2          <= {BITS_SHIFT{1'b0}};
          cur_bucket        <= 'h0;
-         cur_loop          <='h0;
+         cur_loop          <= 'h0;
          
          // bucket and loop in search
-         _bucket <=0;
-         _loop <=0;
+         _bucket  <= 0;
+         _loop    <= 0;
 
          // persistence
-         delay <=0;
+         delay    <= 0;
 
          data_aft_shft <= {SRAM_DATA_WIDTH{1'b0}};
 
@@ -669,7 +668,7 @@ module bloom_filter
             t_counter      <= 'h0;
          else begin
             if(t_watchdog) begin
-               t_counter   <= t_counter +'h1;
+               t_counter   <= t_counter + 'h1;
             end
             else if(watchdog) begin
                t_counter   <= 'h0;

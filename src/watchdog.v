@@ -41,12 +41,14 @@ module watchdog
    always @(posedge clk) begin
       if(reset) begin
          watchdog_counter <= 0;
-      end else if (enable) begin
+      end 
+      else if (enable) begin
          if(update)
             watchdog_counter <= 0;
          else
             watchdog_counter <= watchdog_counter + 1;
-      end else
+      end 
+      else
          watchdog_counter <= watchdog_counter;
    end
 

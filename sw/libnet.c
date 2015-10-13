@@ -3,8 +3,9 @@
 #include <libnet.h>
 #include <inttypes.h>
 #include <string.h>
+#include <time.h>
 
-/* gobal variables */
+/* global variables */
 
 static char *from_ip       = "127.0.0.1";
 static char *to_ip         = "127.0.0.2";
@@ -13,6 +14,9 @@ static uint16_t to_port    = 6666;
 static uint32_t num_pkts   = 1;
 static uint8_t ack         = 0;
 static char * iface        = "nf2c0";
+
+//struct to nanosleep
+struct timespec timing= {(time_t)0,(long)1000};
 
 void print_ip(uint32_t ip)
 {
@@ -25,7 +29,7 @@ void process_args(int argc, char **argv){
    
    char c;
 
-   while((c = getopt(argc, argv,"ahi:p:q:r:s:n:")) != -1){
+   while((c = getopt(argc, argv,"ahi:p:q:r:s:t:n:")) != -1){
       switch(c) {
          case 'a':
             ack = 1;
@@ -45,12 +49,16 @@ void process_args(int argc, char **argv){
          case 'n':
             num_pkts    = atoi(optarg);
             break;
+         case 't':
+            timing.tv_sec = 0;//(time_t)(atoi(optarg)%(int)1E9);
+            timing.tv_nsec= (long)atoi(optarg);
+            break;
          case 'i':
             iface       = optarg;
             break;
          case 'h':
          default:
-            printf("./newlibnet -i <iface> -a {if ack} -p <from_ip> -q <to_ip> -r <from_port> -s <to_port> -n <num_pkts>");
+            printf("./libnet\n-i <iface>\n-a {if ack}\n-p <from_ip>\n-q <to_ip>\n-r <from_port>\n-s <to_port>\n-t <em ns (default 1000ns)>\n-n <num_pkts>\n");
             exit(1);
       }
    }
@@ -72,7 +80,7 @@ int main(int argc, char **argv)
     // payload, src MAC and dst MAC  
     uint8_t *payload, SA[6], DA[6];
     // payload's length
-    uint8_t payload_s = 10;
+    uint8_t payload_s = 64;
     // header's fields
     uint32_t src_ip, dst_ip;
    
@@ -80,7 +88,8 @@ int main(int argc, char **argv)
 
     char errbuf[LIBNET_ERRBUF_SIZE];
     struct libnet_ether_addr *enet_src;
-   
+
+
     payload = malloc(payload_s*sizeof(uint8_t));
     memset(payload,0,payload_s);
     
@@ -119,16 +128,21 @@ int main(int argc, char **argv)
     uint16_t tcp_l = LIBNET_TCP_H+payload_s;
     // send NUM_PKTS packets
 
+    struct timespec req, rem;
+
+    seqn =0;
+    ackn =seqn+payload_s+1;
+    
     for(i=0;i<num_pkts;i++){
-        
-        seqn= i*(payload_s)+1;
-        ackn = (i+1)*payload_s+1;
-         
+        if(i > 0){
+           seqn = ackn;
+           ackn = seqn+payload_s+1;
+        }
         // builds the tcp header         
         tcp = libnet_build_tcp(
             from_port,to_port,seqn,ackn,
             TH_SYN,32767,0,10,tcp_l,
-            payload, payload_s, l, tcp);
+            payload, payload_s/32, l, tcp);
          
         if(tcp ==-1){
             printf("libnet_build_tcp() error\n");
@@ -166,10 +180,16 @@ int main(int argc, char **argv)
             printf("Written %d byte TCP packet.\nSeqNum: %d\n",c,seqn);
          
          if(ack){
+
+           req   = timing;
+           while(nanosleep(&req, &rem) == -1){
+              req.tv_nsec-=rem.tv_nsec;
+           }
+
            tcp = libnet_build_tcp(
                to_port,from_port,seqn,ackn,
                TH_ACK,32767,0,10,tcp_l,
-               payload, payload_s, l, tcp);
+               payload, payload_s/32, l, tcp);
             
            if(tcp ==-1){
                printf("libnet_build_tcp() error\n");
@@ -206,7 +226,6 @@ int main(int argc, char **argv)
             else
                printf("Written %d byte TCP ACK packet.\nSeqNum: %d\n",c,seqn);
          } 
-         sleep(1);
    }
 
  

@@ -228,7 +228,7 @@ module temp
                state_next = PAYLOAD;
             end
 
-            if(in_fifo_data[63:48] > 16'd40)
+            if(in_fifo_data[63:48] /*!= 16'h0) //*/> 16'h28)
                pkt_has_data_next = 1'b1;
             else
                pkt_has_data_next = 1'b0;
