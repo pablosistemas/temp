@@ -83,7 +83,9 @@ module databus
    * eh necessario mudar o tamanho do pacote no metacabecalho
    * em cria_pks.v */
 
-   localparam          NUM_WORDS_PAYLOAD =8;//8 for test
+  /* Simulação - mudar aqui */
+  /* The number of measurements is NUM_PAYLOAD/2 */
+   localparam          NUM_WORDS_PAYLOAD = 20;//8 for test
    localparam          NUM_WORDS_IN_HDR =7;
    /* */
    localparam          CTRL_LAST_WORD=calcula_last_ctrl(NUM_WORDS_PAYLOAD,CTRL_WIDTH,DATA_WIDTH);

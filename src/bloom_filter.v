@@ -86,7 +86,7 @@ module bloom_filter
    localparam TIMER = /*2**10; //*/2875000; //2875000 perbucket~=320ms total
    localparam GRAN = /*50; //*/1000;
 
-   localparam T_COUNTER_LEN = 24;//32-log2(NUM_BUCKETS);
+   localparam T_COUNTER_LEN = 16;//24;//32-log2(NUM_BUCKETS);
 
    // Define the log2 function
    `LOG2_FUNC
@@ -273,14 +273,6 @@ module bloom_filter
    reg [BITS_SHIFT-1:0]    medicao1, medicao1_next;
    reg [BITS_SHIFT-1:0]    medicao2, medicao2_next;
 
-   /*generate
-   genvar j;
-      assign latencia = 0;
-      for(j=0;j<NUM_BUCKETS;j=j+1) begin: latencia_mod
-         assign latencia = indice[j]?j:0;
-      end
-   endgenerate*/
-
 /* --------------instances of external modules-------------- */
    /* fifo holds reqs and addr from write in BF */
    /* fifo in: {req_data,req_ack,hash1,hash2} */
@@ -346,10 +338,18 @@ module bloom_filter
 
    /* if medicao1 is different from medicao2 means false positive */
    assign medicao[7:0] = 
-      (medicao1==medicao2)?medicao1:'hff;
+      /*(medicao1==medicao2)?medicao1:
+      (medicao1!=medicao2 && medicao1>0 && medicao2>0 && 
+      medicao1>medicao2)?medicao1:
+      (medicao1!=medicao2 && medicao1>0 && medicao2>0 && 
+      medicao2>medicao1)?medicao2:'hff;*/
+     medicao1;
 
-   assign medicao[31:8] = in_fifo_t_counter_dout;
+   assign medicao[15:8]    = medicao2;  
+   assign medicao[31:16]   = in_fifo_t_counter_dout;
 
+   //assign medicao[31:8] = in_fifo_t_counter_dout;
+   
    /* fires an updating signal when reached time to shift 
     * the current bucket */   	 
    watchdog
@@ -440,8 +440,8 @@ module bloom_filter
    
             // read_persistence
             delay_next = 0;
-	 		end
-         else begin
+	 		/*end
+         else begin*/
             // current bucket and loop 
             _bucket_nxt =cur_bucket;
             _loop_nxt   =cur_loop;
