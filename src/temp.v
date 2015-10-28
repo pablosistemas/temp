@@ -100,8 +100,9 @@ module temp
    reg[15:0]                        pld_len, pld_len_next;
    
    reg                              pkt_is_ack_next;
-   reg                              pkt_has_data;
-   reg                              pkt_has_data_next;
+
+   /*reg                              pkt_has_data;
+   reg                              pkt_has_data_next;*/
    
 
 
@@ -135,7 +136,8 @@ module temp
          tuple[31:16] =dstport;
          tuple[63:32] =srcip;
          tuple[95:64] =dstip;
-         tuple[127:96] =seqno+{16'b0,pld_len}+32'b1;
+         /* Simulação */
+         tuple[127:96] =seqno+{16'b0,pld_len}/*+32'b1;//*/; //ssh e iperf
       end
    end
 
@@ -180,7 +182,7 @@ module temp
       num_TCP_next = num_TCP;
 
       pkt_is_ack_next = pkt_is_ack;
-      pkt_has_data_next = pkt_has_data;
+      //pkt_has_data_next = pkt_has_data;
       
       srcip_next = srcip;
       dstip_next = dstip;
@@ -228,10 +230,10 @@ module temp
                state_next = PAYLOAD;
             end
 
-            if(in_fifo_data[63:48] /*!= 16'h0) //*/> 16'h28)
+            /*if(in_fifo_data[63:48] > 16'h28)
                pkt_has_data_next = 1'b1;
             else
-               pkt_has_data_next = 1'b0;
+               pkt_has_data_next = 1'b0;*/
 
             pld_len_next =in_fifo_data[63:48];
          end
@@ -268,7 +270,7 @@ module temp
             seqno_next[15:0] = in_fifo_data[63:48];
             ackno_next = in_fifo_data[47:16];
             // subtract ip(0x14) and tcp(offset*4) headers
-            pld_len_next = pld_len - 16'd20 - {(16){in_fifo_data[15:12]*4}};
+            pld_len_next = pld_len - 16'h14 - {10'h0,in_fifo_data[15:12],2'b0};
 
             if(in_fifo_data[4]) begin
                pkt_is_ack_next = 1'b1;
@@ -284,7 +286,7 @@ module temp
          /* if pkt ack+data we back to same state
             * to write data in bloom filter 
             * */
-            if(pkt_has_data && pkt_is_ack) 
+            if((pld_len > 0) && pkt_is_ack) 
                pkt_is_ack_next = 1'b0;
             else
                state_next = PAYLOAD;
@@ -308,7 +310,7 @@ module temp
          state <= WAIT_PACKET;
          num_TCP <= 0;
          pkt_is_ack <= 1'b0;
-         pkt_has_data <=1'b0;
+         //pkt_has_data <=1'b0;
 
          //tupla 
          srcip <= 32'h0;
@@ -324,7 +326,7 @@ module temp
          num_TCP <= num_TCP_next;
          
          pkt_is_ack <= pkt_is_ack_next;    
-         pkt_has_data <=pkt_has_data_next;
+         //pkt_has_data <=pkt_has_data_next;
 
          /* tupla */ 
          srcip <= srcip_next;
@@ -353,7 +355,7 @@ module temp
          $display("seqno: %d\n",seqno_next);
          $display("ackno: %d\n",ackno_next);
          $display("pldlen: %d\n",pld_len_next);
-         if(pkt_is_ack && pkt_has_data)
+         if(pkt_is_ack && (pld_len > 0)/*pkt_has_data*/)
             $display("ack+data\n");
       end
 
