@@ -101,9 +101,8 @@ module temp
    
    reg                              pkt_is_ack_next;
 
-   /*reg                              pkt_has_data;
-   reg                              pkt_has_data_next;*/
-   
+   // added 28/10
+   reg [15:0]                       ihl, ihl_next;
 
 
    //------------------------- Local assignments -------------------------------
@@ -182,7 +181,9 @@ module temp
       num_TCP_next = num_TCP;
 
       pkt_is_ack_next = pkt_is_ack;
-      //pkt_has_data_next = pkt_has_data;
+
+      // added - 28/10
+      ihl_next    = ihl;
       
       srcip_next = srcip;
       dstip_next = dstip;
@@ -214,6 +215,8 @@ module temp
                state_next = PAYLOAD;
             end
             else begin
+               // added 28/10
+               ihl_next   = {10'b0,in_fifo_data[11:8],2'b0}; 
                state_next = WORD3_CHECK_TCP;
             end
          end
@@ -230,12 +233,8 @@ module temp
                state_next = PAYLOAD;
             end
 
-            /*if(in_fifo_data[63:48] > 16'h28)
-               pkt_has_data_next = 1'b1;
-            else
-               pkt_has_data_next = 1'b0;*/
-
-            pld_len_next =in_fifo_data[63:48];
+            // modified in 18/10
+            pld_len_next =in_fifo_data[63:48] - ihl;
          end
       end
       WORD4_ADDR_CHKSUM: begin
@@ -270,7 +269,8 @@ module temp
             seqno_next[15:0] = in_fifo_data[63:48];
             ackno_next = in_fifo_data[47:16];
             // subtract ip(0x14) and tcp(offset*4) headers
-            pld_len_next = pld_len - 16'h14 - {10'h0,in_fifo_data[15:12],2'b0};
+            // modified in 28/10
+            pld_len_next = pld_len - {10'h0,in_fifo_data[15:12],2'b0};
 
             if(in_fifo_data[4]) begin
                pkt_is_ack_next = 1'b1;
@@ -307,35 +307,38 @@ module temp
 
    always @(posedge clk) begin
       if(reset) begin
-         state <= WAIT_PACKET;
-         num_TCP <= 0;
-         pkt_is_ack <= 1'b0;
-         //pkt_has_data <=1'b0;
+         state       <= WAIT_PACKET;
+         num_TCP     <= 0;
+         pkt_is_ack  <= 1'b0;
 
          //tupla 
-         srcip <= 32'h0;
-         dstip <= 32'h0;
-         srcport <= 16'h0;
-         dstport <= 16'h0; 
-         seqno <= 32'h0;
-         ackno <=32'h0;
-         pld_len <=16'h0;
+         srcip    <= 32'h0;
+         dstip    <= 32'h0;
+         srcport  <= 16'h0;
+         dstport  <= 16'h0; 
+         seqno    <= 32'h0;
+         ackno    <= 32'h0;
+         pld_len  <= 16'h0;
 
+         // added in 28/10
+         ihl      <= 16'h0;
       end else begin
-         state <= state_next;
-         num_TCP <= num_TCP_next;
+         state    <= state_next;
+         num_TCP  <= num_TCP_next;
          
          pkt_is_ack <= pkt_is_ack_next;    
-         //pkt_has_data <=pkt_has_data_next;
 
          /* tupla */ 
-         srcip <= srcip_next;
-         dstip <= dstip_next;
-         srcport <= srcport_next;
-         dstport <= dstport_next; 
-         seqno <= seqno_next;
-         ackno <= ackno_next;
-         pld_len <=pld_len_next;
+         srcip    <= srcip_next;
+         dstip    <= dstip_next;
+         srcport  <= srcport_next;
+         dstport  <= dstport_next; 
+         seqno    <= seqno_next;
+         ackno    <= ackno_next;
+         pld_len  <= pld_len_next;
+
+         // added in 28/10
+         ihl      <= ihl_next;
       end
    end
 
@@ -355,22 +358,22 @@ module temp
          $display("seqno: %d\n",seqno_next);
          $display("ackno: %d\n",ackno_next);
          $display("pldlen: %d\n",pld_len_next);
-         if(pkt_is_ack && (pld_len > 0)/*pkt_has_data*/)
+         if(pkt_is_ack && (pld_len > 0))
             $display("ack+data\n");
       end
 
-      /*if(state_next == WAIT_PACKET)
-         $display("WAIT_PACKET\n");*/
+      if(state_next == WORD3_CHECK_TCP)
+         $display("IHL: %d\n",ihl_next); 
 
       if(state_next == WORD5_TCP_PORT)
          $display("WORD5_TCP_PORT\n");
 
       if(state_next == WORD4_ADDR_CHKSUM)
-         $display("WORD4_ADDR_CHKSUM\n");
+         $display("PLD_LEN: %d\n",pld_len_next);
 
-      if(state_next == WORD6_TCP_ACK)
+      /*if(state_next == WORD6_TCP_ACK)
          $display("WORD6_TCP_ACK\n");
-      /*if(state_next == PAYLOAD)
+      if(state_next == PAYLOAD)
          $display("PAYLOAD\n");*/
 
       //if(state == PAYLOAD && state_next == WAIT_PACKET) begin
@@ -382,9 +385,9 @@ module temp
       if(!bloom_rdy)
          $stop;
 
-      if(state_next == WORD6_TCP_ACK && in_fifo_data[4])
+      if(state_next == BLOOM_CTRL && pkt_is_ack_next)
          $display("ACK\n");
-      else if(state_next == WORD6_TCP_ACK)
+      else if(state_next == BLOOM_CTRL && !pkt_is_ack_next)
          $display("NACK\n");
 
    end
