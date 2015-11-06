@@ -161,12 +161,12 @@ module bloom_filter
 				state = _current;
 				fifo_rd_en = 0;
 			end
-         else if(is_ack) begin
+         else /*if(is_ack)*/ begin
    	      state = _next;
             fifo_rd_en = 1;
          end
-         else
-            $stop;
+         /*else
+            $stop;*/
 		end	   
    endtask
 
@@ -428,6 +428,10 @@ module bloom_filter
 	 	case(state)
          REQ_SHIFT_STOP: begin
             if(!in_fifo_hash_empty && enable) begin
+               // modulo burro, teste travamento pipeline
+               /*in_fifo_hash_rd_en = 1;
+               in_fifo_t_counter_rd_en = 1;*/
+
                bloom_filter_disable_nxt = 1'b1;
                state_next = ADDR1;
             end
@@ -638,7 +642,7 @@ module bloom_filter
   
    /* this fifo is intended to hold the t_counter 
    * corresponding of the ack packet that come from temp.v */  
-  assign in_fifo_t_counter_wr = in_wr && is_ack;
+  assign in_fifo_t_counter_wr = in_wr && is_ack && !in_fifo_t_counter_full;
 
    fallthrough_small_fifo_old #(
       .WIDTH(T_COUNTER_LEN), 

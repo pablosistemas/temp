@@ -85,7 +85,7 @@ module databus
 
   /* Simulação - mudar aqui */
   /* The number of measurements is NUM_PAYLOAD/2 */
-   localparam          NUM_WORDS_PAYLOAD = 300; //*/20;//8 for test
+   localparam          NUM_WORDS_PAYLOAD = /*300; //*/20;//8 for test
    localparam          NUM_WORDS_IN_HDR =7;
    /* */
    localparam          CTRL_LAST_WORD=calcula_last_ctrl(NUM_WORDS_PAYLOAD,CTRL_WIDTH,DATA_WIDTH);
@@ -212,13 +212,16 @@ module databus
                   state_next = SEND_EVT_HDR;
                   word_num_next = word_num+1;
                   out_ctrl = header_ctrl; //check
+                  // synthesis translate_off
                   if(header_ctrl != `IO_QUEUE_STAGE_NUM) begin
                      $display("testeIOQ\n");
                      $stop;
                   end
+                  // synthesis translate_on
                   out_data = header_data;
                   out_wr = 1;
-               end else if(!in_fifo_empty) begin 
+               end 
+               else if(!in_fifo_empty) begin 
                   in_fifo_rd_en = 1;
                   out_wr = 1;
                   if(in_fifo_ctrl == 'h0)
@@ -228,10 +231,19 @@ module databus
          end
          WAIT_END_OF_PKT: begin
             if(!in_fifo_empty && out_rdy) begin
-               if(in_fifo_ctrl != 0)
+               if(in_fifo_ctrl != `IO_QUEUE_STAGE_NUM) begin
+                  in_fifo_rd_en = 1;
+                  out_wr = 1;
+                  state_next = WAIT_END_OF_PKT;
+               end
+               else if(in_fifo_ctrl == `IO_QUEUE_STAGE_NUM) begin
+                  state_next = WAIT_PKT;
+               end
+
+               /*if(in_fifo_ctrl != 0)
                   state_next = WAIT_PKT;
                in_fifo_rd_en = 1;
-               out_wr = 1;
+               out_wr = 1;*/
             end
          end
          SEND_EVT_HDR: begin
@@ -275,7 +287,11 @@ module databus
                end
             end
          end
-         default: $stop;
+         default: begin
+         //systhesis translate_off
+            $stop;
+         //systhesis translate_on
+         end
       endcase
    end
 

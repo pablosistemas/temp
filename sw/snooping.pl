@@ -10,7 +10,7 @@ use Getopt::Std;
 use Socket qw( inet_aton );
 
 # global variables
-our %bloom_hash      = ();
+our %bloom_measurements      = ();
 our %bloom_clock     = ();
 our %bloom_counter   = ();
 our $num_clks_per_bu = 2875000;
@@ -29,14 +29,14 @@ sub udp_debug {
 
    my $zero = unpack("H12",substr($payload,0,6));
 
-   my $NUM_BLOOM_IN_PACKET = 4;
+   my $NUM_BLOOM_IN_PACKET = 10;
    my $bloom_key;
    my ($src_oct_1,$src_oct_2,$src_oct_3,$src_oct_4);
    my ($dst_oct_1,$dst_oct_2,$dst_oct_3,$dst_oct_4);
    my ($port1,$port2);
    my $offset=0;
    my $data_length=16;
-   my $measurement;
+   my ($measurement1, $measurement2);
    my $up_measurement;
    my $milicount;
    my ($src_ip,$dst_ip);
@@ -58,26 +58,21 @@ sub udp_debug {
       $port1 = unpack("n",substr($payload,$offset+8,2));
       $port2 = unpack("n",substr($payload,$offset+10,2));
 
-      $milicount     = unpack("H6",substr($payload,$offset+12,3));
-      $measurement   = unpack("H2",substr($payload,$offset+15,1));
+      $milicount     = unpack("H4",substr($payload,$offset+12,2));
+      $measurement1  = unpack("H2",substr($payload,$offset+14,1));
+      $measurement2  = unpack("H2",substr($payload,$offset+15,1));
 
       $src_ip = sprintf("%0d.%0d.%0d.%0d",$src_oct_1,$src_oct_2,$src_oct_3,$src_oct_4);
       
       $dst_ip = sprintf("%0d.%0d.%0d.%0d",$dst_oct_1,$dst_oct_2,$dst_oct_3,$dst_oct_4);
 
-      printf "%s:%d -> %s:%d ... $measurement\n",$src_ip,$port1,$dst_ip,$port2;
+      printf "%s:%d -> %s:%d ... $measurement1:$measurement2\n",$src_ip,$port1,$dst_ip,$port2;
       
-      $up_measurement = hex($measurement);
-
-      if($up_measurement != 0xff && $up_measurement != 0x0f){
-         if($up_measurement > 0) {
-            $up_measurement = $up_measurement-0.5;
-         }
-
-         if(defined ($bloom_hash{$bloom_key})) {
-            $bloom_hash{$bloom_key} += $up_measurement;   
+      if(hex($measurement1) == hex($measurement2) && hex($measurement1) != 0x0f){
+         if(defined ($bloom_measurements{$bloom_key})) {
+            $bloom_measurements{$bloom_key} += hex($measurement1);   
          } else {
-            $bloom_hash{$bloom_key} = $up_measurement;   
+            $bloom_measurements{$bloom_key} = hex($measurement1);   
          }
 
          if(defined ($bloom_counter{$bloom_key})) {
@@ -88,14 +83,14 @@ sub udp_debug {
 
          if(defined ($bloom_clock{$bloom_key})) {
             $bloom_clock{$bloom_key} +=
-            ($num_clks_per_bu*$up_measurement+hex($milicount)*$gran);  
+            ($num_clks_per_bu*hex($measurement1)+hex($milicount)*$gran)-0.5*$num_clks_per_bu;  
          } else {
             $bloom_clock{$bloom_key} = 
-            ($num_clks_per_bu*$up_measurement+hex($milicount)*$gran);
+            ($num_clks_per_bu*hex($measurement1)+hex($milicount)*$gran)-0.5*$num_clks_per_bu;
          }
       }
       else {
-         printf "Erro em medição: %s\n",$measurement;
+         printf "Erro em medição: %s\n",hex($measurement1);
       }
 
    }
@@ -163,7 +158,6 @@ die "-c <num clks until shift>\n-f <filter EXPR>\n-i <iface>\n-n <number of pack
 
 $dev = $options{i} if (defined $options{i});
 $number_of_pkts = $options{n} if (defined $options{n});
-print "$dev\n";
 
 # it sets the number of clk per bucket shift
 $num_clks_per_bu = $options{c} if (defined $options{c});
@@ -190,7 +184,8 @@ Net::Pcap::pcap_loop($pcap,$number_of_pkts,\&got_a_packet,'');
 Net::Pcap::pcap_close($pcap);
 
 my $key;
-my @keys = keys %bloom_hash;
+my @keys = keys %bloom_measurements;
 foreach $key (@keys) {
-   printf "bloom{$key}: Media buckets: %f. Media (em ms): %f\n\n", $bloom_hash{$key}/$bloom_counter{$key},$bloom_clock{$key}*8e-9*1e3/$bloom_counter{$key};
+   printf "----- bloom{$key} -----\nNo. pacotes: %f\nMedia buckets: %f\nMedia (em ms): %f\n\n", 
+      $bloom_counter{$key},$bloom_measurements{$key}/$bloom_counter{$key},$bloom_clock{$key}*8e-9*1e3/$bloom_counter{$key};
 }
