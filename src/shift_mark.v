@@ -209,7 +209,7 @@ module shift_mark
       // synthesis translate_on
 
    /* updates data that came from SRAM */
-   atualiza_linha_shift #(
+   atualiza_linha/*_shift*/ #(
    		.DATA_WIDTH(SRAM_DATA_WIDTH), 
    		.NUM_BUCKETS(NUM_BUCKETS),
          .BUCKET_SZ(NUM_BITS_BUCKET),

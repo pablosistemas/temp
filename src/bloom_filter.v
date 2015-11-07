@@ -234,6 +234,9 @@ module bloom_filter
    reg [T_COUNTER_LEN-1:0]             t_counter;
    wire                                t_watchdog;
 
+   //added 06 November 2015
+   wire                                is_mea_valid;
+
 
 	/* ----------- local assignments -----------*/
 	/* hash FIFO */
@@ -337,16 +340,11 @@ module bloom_filter
       .latencia   (latencia));
 
    /* if medicao1 is different from medicao2 means false positive */
-   assign medicao[7:0] = 
-      /*(medicao1==medicao2)?medicao1:
-      (medicao1!=medicao2 && medicao1>0 && medicao2>0 && 
-      medicao1>medicao2)?medicao1:
-      (medicao1!=medicao2 && medicao1>0 && medicao2>0 && 
-      medicao2>medicao1)?medicao2:'hff;*/
-     medicao1;
-
+   assign medicao[7:0]     = medicao1;
    assign medicao[15:8]    = medicao2;  
    assign medicao[31:16]   = in_fifo_t_counter_dout;
+   /* if measurements are equals and different from 0xf */
+   assign is_mea_valid = (medicao1==medicao2 && medicao1!={{(BITS_SHIFT-4){1'b0}},{4'hf}})?1:0;
 
    //assign medicao[31:8] = in_fifo_t_counter_dout;
    
@@ -548,14 +546,20 @@ module bloom_filter
          PAYLOAD1: begin
          /* write in fifo the word with results */
          /* if fifo is full, discard */
-            if(!in_fifo_med_full) begin 
+            if(!in_fifo_med_full && is_mea_valid) begin 
                in_fifo_med_din   = tuple[95:32]; //ip1 e ip2
                in_fifo_med_wr    = 1'b1;
                state_next        = PAYLOAD2;
             end
-            /*   state_next = ADDR1;
-            end else
-               state_next = PAYLOAD2;*/
+         /* if error in measurement we do not record in fifo */   
+            else if(!is_mea_valid) begin
+               /* catch next tuple and next t_counter */
+               in_fifo_hash_rd_en      = 1'b1;
+               in_fifo_t_counter_rd_en = 1'b1;
+               // free shift.v
+               bloom_filter_disable_nxt = 1'b0;
+               state_next =REQ_SHIFT_STOP;
+            end
          end
          PAYLOAD2: begin
             in_fifo_med_din   = {tuple[31:0],medicao};

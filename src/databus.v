@@ -72,10 +72,10 @@ module databus
       end
    endfunction
 
-   localparam          WAIT_PKT =1;
-   localparam          WAIT_END_OF_PKT =2;
-   localparam          SEND_EVT_HDR =4;
-   localparam          SEND_EVT_PAYLOAD =8;
+   localparam          WAIT_PKT           =1;
+   localparam          WAIT_END_OF_PKT    =2;
+   localparam          SEND_EVT_HDR       =4;
+   localparam          SEND_EVT_PAYLOAD   =8;
 
    localparam          NUM_STATES =4;
 
@@ -193,11 +193,11 @@ module databus
       // Default values
       {out_ctrl,out_data} = {in_fifo_ctrl,in_fifo_data};
       /* fifo */
-      in_fifo_rd_en = 0;
+      in_fifo_rd_en  = 0;
       pld_fifo_rd_en = 0;
       /* module */
-      out_wr =0;
-      evt_pkt_sent =0;
+      out_wr         = 0;
+      evt_pkt_sent   = 0;
       num_words_sent_next =num_words_sent;
 
       state_next = state;
@@ -207,25 +207,31 @@ module databus
       case(state)
          WAIT_PKT: begin
             if(out_rdy) begin
+               /*if(!pld_fifo_empty)
+                  pld_fifo_rd_en = 1;*/
                if(pld_fifo_nearly_full) begin
-                  $display("nearly_full\n");
-                  state_next = SEND_EVT_HDR;
-                  word_num_next = word_num+1;
-                  out_ctrl = header_ctrl; //check
+                  state_next     = SEND_EVT_HDR;
+                  word_num_next  = word_num+1;
                   // synthesis translate_off
                   if(header_ctrl != `IO_QUEUE_STAGE_NUM) begin
                      $display("testeIOQ\n");
                      $stop;
                   end
                   // synthesis translate_on
+                  
+                  out_ctrl = header_ctrl; //check
                   out_data = header_data;
                   out_wr = 1;
                end 
                else if(!in_fifo_empty) begin 
                   in_fifo_rd_en = 1;
                   out_wr = 1;
-                  if(in_fifo_ctrl == 'h0)
+
+                  //if(in_fifo_ctrl == 'h0)
+                  if(in_fifo_ctrl == `IO_QUEUE_STAGE_NUM)
                      state_next = WAIT_END_OF_PKT;
+                  else 
+                     state_next = WAIT_PKT;
                end
             end
          end
@@ -255,7 +261,8 @@ module databus
                   out_ctrl = header_ctrl; //check
                   out_data = header_data;
                   out_wr = 1;
-               end else begin
+               end 
+               else begin
                   state_next = SEND_EVT_PAYLOAD;
                   word_num_next = 0; //reset value to next pkt
                end
@@ -273,7 +280,8 @@ module databus
                   out_wr = 1;
                   pld_fifo_rd_en = 1;
                   num_words_sent_next = num_words_sent+1;
-               end else begin
+               end 
+               else begin
             /* marca fim do pacote */
             /* ctrl da ultima palavra igual ao byte final */
                   out_ctrl = 8'h1;
@@ -282,7 +290,7 @@ module databus
                   pld_fifo_rd_en = 1;
                   evt_pkt_sent =1;
                   /* reset */
-                  state_next = WAIT_PKT;
+                  state_next = WAIT_END_OF_PKT; //WAIT_PKT;
                   num_words_sent_next =0;
                end
             end

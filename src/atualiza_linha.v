@@ -80,9 +80,15 @@ module atualiza_linha
          output_data[BLOOM_INIT_POS-BITS_SHIFT-1:0] =cur_loop;
       end
       else if (data_loop > cur_loop) begin
-         // $display("ERROR: data_loop updated earlier. Data_loop > cur_loop\n");
-         output_data[BLOOM_INIT_POS-1:BLOOM_INIT_POS-BITS_SHIFT] =data_bucket;
-         output_data[BLOOM_INIT_POS-BITS_SHIFT-1:0] =data_loop;
+      //margem de segurança maior que numero buckets até um shift completo na SRAM
+         if((data_loop - cur_loop) >= 'hf00) begin
+            output_data[BLOOM_INIT_POS-1:BLOOM_INIT_POS-BITS_SHIFT] = cur_bucket;
+            output_data[BLOOM_INIT_POS-BITS_SHIFT-1:0] = cur_loop;
+         end
+         else begin
+            output_data[BLOOM_INIT_POS-1:BLOOM_INIT_POS-BITS_SHIFT] = data_bucket;
+            output_data[BLOOM_INIT_POS-BITS_SHIFT-1:0] = data_loop;
+         end
       end
       else begin
          output_data[BLOOM_INIT_POS-1:BLOOM_INIT_POS-BITS_SHIFT] =cur_bucket>data_bucket?cur_bucket:data_bucket;

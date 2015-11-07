@@ -298,7 +298,8 @@ module temp
                in_fifo_rd_en = 1;
                out_wr = 1;
                state_next = PAYLOAD;
-            end else if (in_fifo_ctrl == `IO_QUEUE_STAGE_NUM)
+            end 
+            else if (in_fifo_ctrl == `IO_QUEUE_STAGE_NUM)
                state_next = WAIT_PACKET; 
          end
       end
